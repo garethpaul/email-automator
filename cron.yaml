@@ -1,0 +1,5 @@
+cron:
+  - description: email
+  url: /mail/me?userId=XXXXX
+  schedule: every 5 minutes from 05:00 to 23:00
+  timezone: America/Los_Angeles
