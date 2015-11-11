@@ -1,4 +1,4 @@
-import webapp2, jinja2, os, time, json, httplib2
+import webapp2, jinja2, os, time, json, httplib2, sys
 import auth
 from datetime import datetime
 from google.appengine.api import memcache
@@ -10,6 +10,8 @@ from oauth2client.appengine import OAuth2Decorator
 from oauth2client.appengine import oauth2decorator_from_clientsecrets
 from oauth2client.client import AccessTokenRefreshError
 from apiclient.discovery import build
+sys.path.insert(0, 'libs')
+import httplib2
 
 http = httplib2.Http(memcache)
 service = build("gmail", "v1", http=http)

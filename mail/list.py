@@ -1,5 +1,5 @@
 # Import Global Libs
-import webapp2, jinja2, os, json, logging, httplib2, base64,re, email, sys, logging
+import webapp2, jinja2, os, json, logging, base64,re, email, sys, logging
 # Import Local Libs
 import auth, rules
 from database import default
@@ -7,6 +7,7 @@ from database import default
 # Get Libs from Sys
 sys.path.insert(0, 'libs')
 from bs4 import BeautifulSoup
+import httplib2
 
 from datetime import datetime, timedelta
 from apiclient import errors

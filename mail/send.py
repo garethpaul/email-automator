@@ -9,7 +9,10 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import mimetypes
 import os
+import sys
+sys.path.insert(0, 'libs')
 import httplib2
+
 from google.appengine.api import memcache
 from apiclient.discovery import build
 from apiclient import errors

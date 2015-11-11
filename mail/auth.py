@@ -1,4 +1,8 @@
-import webapp2, jinja2, os, logging, httplib2
+import webapp2, jinja2, os, logging, sys
+# Get Libs from Sys
+sys.path.insert(0, 'libs')
+import httplib2
+
 from database import default
 from datetime import datetime, timedelta
 from apiclient.discovery import build
@@ -13,6 +17,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import users
+
 
 http = httplib2.Http(memcache)
 
