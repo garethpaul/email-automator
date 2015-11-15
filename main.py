@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-
 import webapp2
-
-class MainHandler(webapp2.RequestHandler):
-    def get(self):
-        self.response.write('Hello world!')
+import mail
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler)
+    ('/auth', mail.auth.Handler),
+    ('/mail/check', mail.check.Handler),
+    ('/mail/list', mail.list.Handler),
+    ('/mail/me', mail.list.Single)
 ], debug=True)
