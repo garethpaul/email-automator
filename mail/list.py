@@ -110,9 +110,6 @@ def GetMessage(user_id, msg_id):
   """
   try:
     message = service.users().messages().get(userId='me', id=msg_id).execute(http=auth.getAuth(user_id))
-
-    print 'Message snippet: %s' % message['snippet']
-
     return message
   except errors.HttpError, error:
     print 'An error occurred: %s' % error
@@ -130,9 +127,6 @@ def get_mail_body(mail):
     """
     body = ""
     if mail.is_multipart():
-        # This does not work.
-        # for part in mail.get_payload():
-        #    body += part.get_payload()
         body = get_mpart(mail)
     else:
         body = mail.get_payload()
@@ -163,7 +157,6 @@ def getmailaddresses(msg, name):
             # only one string! Is it the address or is it the name ?
             # use the same for both and see later
             name=addr
-
         try:
             # address must be ascii only
             addr=addr.encode('ascii')
