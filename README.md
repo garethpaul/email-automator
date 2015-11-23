@@ -16,4 +16,15 @@
 
 1.  The output of processing is a plain text email.
 2.  We then push the output from processing back into the Google Mail APIs
-3.  The sender receives a unique and debatable humorous  reply
+3.  The sender receives a unique and debatable humorous reply
+4.  
+
+#Getting Started
+
+1. Get a Google AppEngine instance via https://appengine.google.com
+2. Install Google App Engine Mac App - https://cloud.google.com/appengine/downloads
+3. Update your app.yaml file with the name
+4. Update settings.py with your email address
+5. Visit https://your-app-name.appspot.com/auth
+6. Once authorized your email should now be authorized to auto-respond.
+3. 
