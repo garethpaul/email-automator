@@ -1,0 +1,5 @@
+webob==1.6.1
+webapp2==2.5.2
+uritemplate==0.6
+webtest==2.0.21
+virtualenv==15.0.2
