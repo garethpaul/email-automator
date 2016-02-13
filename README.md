@@ -27,4 +27,3 @@
 4. Update settings.py with your email address
 5. Visit https://your-app-name.appspot.com/auth
 6. Once authorized your email should now be authorized to auto-respond.
-3. 
