@@ -1,6 +1,12 @@
 #!/usr/bin/env python
+import sys
+sys.path.append('/usr/local/google_appengine/')
+
 import webapp2
 import mail
+import mail.auth
+import mail.check
+import mail.list
 
 app = webapp2.WSGIApplication([
     ('/auth', mail.auth.Handler),
