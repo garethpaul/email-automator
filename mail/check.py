@@ -9,7 +9,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from oauth2client.appengine import OAuth2Decorator
 from oauth2client.appengine import oauth2decorator_from_clientsecrets
 from oauth2client.client import AccessTokenRefreshError
-from apiclient.discovery import build
+from googleapiclient.discovery import build
 sys.path.insert(0, 'libs')
 import httplib2
 

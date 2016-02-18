@@ -5,7 +5,7 @@ import httplib2
 
 from database import default
 from datetime import datetime, timedelta
-from apiclient.discovery import build
+from googleapiclient.discovery import build
 from oauth2client.appengine import OAuth2Decorator
 from oauth2client.appengine import oauth2decorator_from_clientsecrets
 from oauth2client.client import AccessTokenRefreshError
