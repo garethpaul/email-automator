@@ -8,3 +8,7 @@ app = webapp2.WSGIApplication([
     ('/mail/list', mail.list.Handler),
     ('/mail/me', mail.list.Single)
 ], debug=True)
+
+
+if __name__ == '__main__':
+    unittest.main()
