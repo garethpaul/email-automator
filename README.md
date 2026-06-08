@@ -1,3 +1,8 @@
+# email-automator
+
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 #Overview
 *Retrieving Email*
 
