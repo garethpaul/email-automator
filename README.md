@@ -78,4 +78,4 @@ Keep changes small and tied to the project that is already present in this repos
 
 Prior README summary:
 
-> email-automator <!-- README-OVERVIEW-IMAGE --> Overview *Retrieving Email* 1.  Google Mail APIs scan my inbox every 3 minutes. 2.  New emails are sent to a task queue for processing. 3.  Task queues get flushed every 5 minutes. *Processing Email*
+> email-automator Overview *Retrieving Email* 1.  Google Mail APIs scan my inbox every 3 minutes. 2.  New emails are sent to a task queue for processing. 3.  Task queues get flushed every 5 minutes. *Processing Email*
