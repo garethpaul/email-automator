@@ -47,3 +47,6 @@ surprising auto-replies or broad mailbox access.
 - Silent auto-reply behavior without opt-in controls
 - Broad Google platform migrations bundled with behavior changes
 - Tests that require access to a real Gmail inbox by default
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
