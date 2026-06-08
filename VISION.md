@@ -22,6 +22,16 @@ Priority:
 - Preserve cron/task-queue intent for retrieval and processing
 - Keep App Engine setup requirements visible
 
+Current baseline:
+
+- `mail.rules` can be imported and tested offline without App Engine or Gmail
+  modules.
+- Duplicate message IDs are cached in the offline rule baseline so approved
+  messages are sent only once.
+- Unknown automated replies avoid emergency-service language.
+- `scripts/check-baseline.sh` runs deterministic rule tests that do not access
+  Gmail, OAuth, or real inbox data.
+
 Next priorities:
 
 - Document credential files, scopes, and safe local setup
@@ -32,6 +42,7 @@ Next priorities:
 Contribution rules:
 
 - One PR = one focused auth, mail processing, deployment, or documentation topic.
+- Run `scripts/check-baseline.sh` before pushing reply-rule changes.
 - Do not mix platform migration with reply behavior changes unless required.
 - Keep vendored dependency changes reviewable.
 - Verify behavior against test fixtures rather than real inbox data where possible.

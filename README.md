@@ -5,33 +5,29 @@
 
 ## Overview
 
-`garethpaul/email-automator` is a Python project. Email Automator for Gmail
-
-This README is based on the checked-in source, manifests, scripts, and repository metadata on the `master` branch. The project language mix found during review was: Python (11).
+`garethpaul/email-automator` is a legacy Python 2 Google App Engine prototype
+for scanning Gmail messages and generating automated replies from local rules.
+The live app paths require App Engine services and OAuth credentials; the
+default repository verification path only exercises offline rule behavior.
 
 ## Repository Contents
 
 - `README.md` - project overview and local usage notes
-- `requirements.txt` - Python dependency or packaging metadata
-- `database` - source or example code
-- `mail` - source or example code
-- `main.py`
+- `requirements.txt` - legacy Python dependency pins
+- `app.yaml` and `cron.yaml` - App Engine routing and scheduled check config
+- `database/` - App Engine credential model helpers
+- `mail/` - Gmail auth, listing, send, and reply-rule modules
+- `main.py` - App Engine webapp route registration
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
-
-Additional scan context:
-
-- Source directories: database, mail
-- Dependency and build manifests: requirements.txt
-- Entry points or build surfaces: main.py
-- Test-looking files: test.py
 
 ## Getting Started
 
 ### Prerequisites
 
 - Git
-- Python matching the era of the project
+- Python 2.7/App Engine SDK for the deployed prototype
+- Python 3 for the offline rule tests
 
 ### Setup
 
@@ -41,21 +37,46 @@ cd email-automator
 python -m pip install -r requirements.txt
 ```
 
+Live Gmail/App Engine paths require local OAuth client configuration and App
+Engine credentials that must not be committed. The default local test path below
+does not access Gmail, OAuth, App Engine, or real mailbox data.
+
 The setup commands above are derived from repository files. Legacy mobile, Python, or JavaScript samples may require older SDKs or package versions than a modern workstation uses by default.
 
 ## Running or Using the Project
 
-- No single runtime entry point was identified. Start by reading the source files and manifests listed above.
+- `main.py` defines the App Engine webapp routes for `/auth`, `/mail/check`,
+  `/mail/list`, and `/mail/me`.
+- `cron.yaml` shows the scheduled `/mail/me?userId=XXXXX` check path; replace
+  placeholders only in local/deployment configuration.
+- `mail/rules.py` contains the offline-testable automated reply rule logic.
 
 ## Testing and Verification
 
-- `python -m pytest` or the test runner used by the files above
+Run the offline rule tests:
+
+```bash
+python3 -m unittest discover -s tests -p "test*.py"
+```
+
+Run the full local baseline gate:
+
+```bash
+scripts/check-baseline.sh
+```
+
+These tests use deterministic fixtures, assert duplicate-message cache behavior,
+and do not access Gmail or a real inbox.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
 ## Configuration and Secrets
 
 - The scan found credential-adjacent names. Review configuration paths before running against real accounts.
+- Keep OAuth client IDs, OAuth client secrets, App Engine credentials, Gmail
+  tokens, and real mailbox samples out of git.
+- The checked-in `CLIENT ID`, `CLIENT_SECRET`, and `XXXXX` values are
+  placeholders only.
 
 ## Security and Privacy Notes
 
@@ -69,6 +90,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
+- See `docs/plans/2026-06-08-email-rule-baseline.md` for the current offline
+  reply-rule baseline.
 
 ## Contributing
 
