@@ -7,8 +7,22 @@ threadsafe: yes
 
 # main handlers
 handlers:
+- url: /auth
+  script: main.app
+  login: required
+  secure: always
+- url: /mail/me
+  script: main.app
+  login: admin
+  secure: always
+- url: /mail/.*
+  script: main.app
+  login: required
+  secure: always
 - url: .*
   script: main.app
+  login: required
+  secure: always
 
 # libraries used - https://cloud.google.com/appengine/docs/python/tools/libraries27
 libraries:

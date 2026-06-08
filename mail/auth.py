@@ -29,8 +29,31 @@ decorator = OAuth2Decorator(
     'https://www.googleapis.com/auth/gmail.send'
   ], approval_prompt = 'force')
 
-def getAuth(userId):
+def current_user_id():
+    current_user = users.get_current_user()
+    if current_user is None:
+        return None
+    return current_user.user_id()
+
+def is_cron_request(request):
+    return request.headers.get('X-AppEngine-Cron') == 'true'
+
+def cron_user_id(request):
+    if not is_cron_request(request):
+        return None
+    userId = request.get("userId")
+    if not userId or userId == "XXXXX":
+        return None
+    return userId
+
+def getAuth(userId=None):
+    if userId is None:
+        userId = current_user_id()
+    if userId is None:
+        raise AccessTokenRefreshError('No authenticated App Engine user')
     credentials = StorageByKeyName(default.CredentialsModel, userId, 'credentials').get()
+    if credentials is None:
+        raise AccessTokenRefreshError('No stored credentials for current user')
     http = httplib2.Http()
     http = credentials.authorize(http)
     return http

@@ -13,7 +13,7 @@ app = webapp2.WSGIApplication([
     ('/mail/check', mail.check.Handler),
     ('/mail/list', mail.list.Handler),
     ('/mail/me', mail.list.Single)
-], debug=True)
+], debug=False)
 
 
 if __name__ == '__main__':

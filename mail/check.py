@@ -20,10 +20,19 @@ class Handler(webapp.RequestHandler):
     def get(self):
         # set the headers to return valid format for JSON
         self.response.headers.add_header('Content-Type', 'application/json')
-        # userID is an INT that is supplied from oAuth (this is then passed to check that we are authorized to perform the request)
-        userId = self.request.get("userId")
+        # Only use the Google account authenticated by App Engine for Gmail access.
+        userId = auth.current_user_id()
+        if userId is None:
+            self.error(401)
+            self.response.out.write(json.dumps({'error': 'authentication required'}))
+            return
         # perform API request to get list if labels
-        results = service.users().labels().list(userId='me').execute(http=auth.getAuth(userId))
+        try:
+            results = service.users().labels().list(userId='me').execute(http=auth.getAuth(userId))
+        except AccessTokenRefreshError:
+            self.error(401)
+            self.response.out.write(json.dumps({'error': 'gmail authorization required'}))
+            return
         # get the labels
         labels = results.get('labels', [])
         # reuturn the labels back to the user

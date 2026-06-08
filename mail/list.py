@@ -219,7 +219,11 @@ def GetMimeMessage(service, user_id, msg_id):
 class Single(webapp.RequestHandler):
     def get(self):
         self.response.headers.add_header('Content-Type', 'application/json')
-        userId = self.request.get("userId")
+        userId = auth.cron_user_id(self.request)
+        if userId is None:
+            self.error(403)
+            self.response.out.write(json.dumps({'error': 'cron access required'}))
+            return
         messages = ListMessagesWithLabels(service, userId, None)
         to_me = []
         for msg in messages:
@@ -237,6 +241,10 @@ class Single(webapp.RequestHandler):
 class Handler(webapp.RequestHandler):
     def get(self):
         self.response.headers.add_header('Content-Type', 'application/json')
-        userId = self.request.get("userId")
+        userId = auth.current_user_id()
+        if userId is None:
+            self.error(401)
+            self.response.out.write(json.dumps({'error': 'authentication required'}))
+            return
         messages = ListMessagesWithLabels(service, userId, None)
         self.response.out.write(json.dumps([], indent = 2, separators=(',', ': ')))
