@@ -1,5 +1,8 @@
 ## Email Automator Vision
 
+This document explains the current state and direction of the project.
+Project overview and developer docs: [`README.md`](README.md)
+
 Email Automator is a Google App Engine and Gmail API prototype for scanning an
 inbox, processing incoming email text, and sending automated replies.
 
