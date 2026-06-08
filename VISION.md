@@ -1,0 +1,49 @@
+## Email Automator Vision
+
+Email Automator is a Google App Engine and Gmail API prototype for scanning an
+inbox, processing incoming email text, and sending automated replies.
+
+The repository is useful as a historical email automation experiment with task
+queues, cron, Gmail authorization, local rule data, and vendored App Engine-era
+libraries. Setup notes live in [`README.md`](README.md).
+
+The goal is to preserve the prototype while making authorization, privacy, and
+deployment boundaries explicit.
+
+The current focus is:
+
+Priority:
+
+- Keep Gmail authorization and automated reply flow understandable
+- Avoid committing OAuth credentials, app secrets, or private mailbox data
+- Preserve cron/task-queue intent for retrieval and processing
+- Keep App Engine setup requirements visible
+
+Next priorities:
+
+- Document credential files, scopes, and safe local setup
+- Modernize App Engine and Google API dependencies in a dedicated pass
+- Add tests around email stripping, rule matching, and reply generation
+- Make opt-in and failure behavior clear before any real mailbox use
+
+Contribution rules:
+
+- One PR = one focused auth, mail processing, deployment, or documentation topic.
+- Do not mix platform migration with reply behavior changes unless required.
+- Keep vendored dependency changes reviewable.
+- Verify behavior against test fixtures rather than real inbox data where possible.
+
+## Security And Privacy
+
+Email contents, sender identities, OAuth tokens, and generated replies are
+sensitive. Do not commit credentials, mailbox exports, or real message samples.
+
+Automation should remain explicit and opt-in; future changes should avoid
+surprising auto-replies or broad mailbox access.
+
+## What We Will Not Merge For Now
+
+- Real OAuth credentials, mailbox data, or private reply corpora
+- Silent auto-reply behavior without opt-in controls
+- Broad Google platform migrations bundled with behavior changes
+- Tests that require access to a real Gmail inbox by default
