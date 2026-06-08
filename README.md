@@ -73,9 +73,3 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Contributing
 
 Keep changes small and tied to the project that is already present in this repository. For code changes, document the toolchain used, avoid committing generated dependency directories or local configuration, and update this README when setup or verification steps change.
-
-## Existing Project Notes
-
-Prior README summary:
-
-> email-automator Overview *Retrieving Email* 1.  Google Mail APIs scan my inbox every 3 minutes. 2.  New emails are sent to a task queue for processing. 3.  Task queues get flushed every 5 minutes. *Processing Email*
