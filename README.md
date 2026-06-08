@@ -65,6 +65,14 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Review changes touching file, media, JSON, XML, CSV, OCR, or data parsing; examples from the scan include mail/check.py, mail/list.py, mail/rules.py, mail/send.py.
 - Review changes touching database, model, or persistence code; examples from the scan include database/default.py.
 
+## Development Debug Mode
+
+Debug mode is disabled by default. For local development only, set:
+
+```bash
+EMAIL_AUTOMATOR_DEBUG=1
+```
+
 ## Maintenance Notes
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
