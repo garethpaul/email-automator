@@ -35,6 +35,11 @@ Contribution rules:
 
 ## Security And Privacy
 
+Canonical security policy and reporting:
+
+- [`SECURITY.md`](SECURITY.md)
+
+
 Email contents, sender identities, OAuth tokens, and generated replies are
 sensitive. Do not commit credentials, mailbox exports, or real message samples.
 
