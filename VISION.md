@@ -41,7 +41,7 @@ sensitive. Do not commit credentials, mailbox exports, or real message samples.
 Automation should remain explicit and opt-in; future changes should avoid
 surprising auto-replies or broad mailbox access.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Real OAuth credentials, mailbox data, or private reply corpora
 - Silent auto-reply behavior without opt-in controls
