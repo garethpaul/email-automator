@@ -31,6 +31,10 @@ Current baseline:
 - Unknown automated replies avoid emergency-service language.
 - `scripts/check-baseline.sh` runs deterministic rule tests that do not access
   Gmail, OAuth, or real inbox data.
+- App Engine debug mode defaults off, auth/mail routes require HTTPS/login, and
+  `/mail/me` is reserved for admin/cron access.
+- OAuth and automation mailbox placeholders are environment-backed instead of
+  committed query parameters.
 
 Next priorities:
 
@@ -42,7 +46,8 @@ Next priorities:
 Contribution rules:
 
 - One PR = one focused auth, mail processing, deployment, or documentation topic.
-- Run `scripts/check-baseline.sh` before pushing reply-rule changes.
+- Run `scripts/check-baseline.sh` before pushing reply-rule, auth, or App
+  Engine routing changes.
 - Do not mix platform migration with reply behavior changes unless required.
 - Keep vendored dependency changes reviewable.
 - Verify behavior against test fixtures rather than real inbox data where possible.

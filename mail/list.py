@@ -39,8 +39,16 @@ domain="(?:"  +  dot_atom  +  "|"  +  domain_lit  +  ")"
 addr_spec=local  +  "\@"  +  domain
 email_address_re=re.compile('^'+addr_spec+'$')
 
-# Set this to email
-my_email = "myemail@myemail.com"
+# Set this to the mailbox address that should trigger automation.
+my_email = os.environ.get("AUTOMATION_TO_EMAIL", "myemail@myemail.com")
+
+def request_user_id(handler):
+    userId = handler.request.get("userId") or os.environ.get("AUTOMATION_USER_ID")
+    if not userId:
+        handler.error(400)
+        handler.response.out.write(json.dumps({"error": "Missing automation user id"}))
+        return None
+    return userId
 
 def ListMessagesWithLabels(service, user_id, label_ids=[]):
   """List all Messages of the user's mailbox with label_ids applied.
@@ -219,7 +227,9 @@ def GetMimeMessage(service, user_id, msg_id):
 class Single(webapp.RequestHandler):
     def get(self):
         self.response.headers.add_header('Content-Type', 'application/json')
-        userId = self.request.get("userId")
+        userId = request_user_id(self)
+        if userId is None:
+            return
         messages = ListMessagesWithLabels(service, userId, None)
         to_me = []
         for msg in messages:
@@ -237,6 +247,8 @@ class Single(webapp.RequestHandler):
 class Handler(webapp.RequestHandler):
     def get(self):
         self.response.headers.add_header('Content-Type', 'application/json')
-        userId = self.request.get("userId")
+        userId = request_user_id(self)
+        if userId is None:
+            return
         messages = ListMessagesWithLabels(service, userId, None)
         self.response.out.write(json.dumps([], indent = 2, separators=(',', ': ')))

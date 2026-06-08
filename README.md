@@ -26,7 +26,7 @@ default repository verification path only exercises offline rule behavior.
 ### Prerequisites
 
 - Git
-- Python 2.7/App Engine SDK for the deployed prototype
+- Google App Engine Python 2 SDK for the deployed prototype
 - Python 3 for the offline rule tests
 
 ### Setup
@@ -47,8 +47,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - `main.py` defines the App Engine webapp routes for `/auth`, `/mail/check`,
   `/mail/list`, and `/mail/me`.
-- `cron.yaml` shows the scheduled `/mail/me?userId=XXXXX` check path; replace
-  placeholders only in local/deployment configuration.
+- `app.yaml` requires HTTPS for app routes, requires login for auth/mail
+  handlers, and restricts `/mail/me` to admin/cron access.
+- `cron.yaml` schedules `/mail/me`; the automation user id comes from
+  `AUTOMATION_USER_ID` instead of a committed query parameter.
 - `mail/rules.py` contains the offline-testable automated reply rule logic.
 
 ## Testing and Verification
@@ -75,8 +77,10 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - The scan found credential-adjacent names. Review configuration paths before running against real accounts.
 - Keep OAuth client IDs, OAuth client secrets, App Engine credentials, Gmail
   tokens, and real mailbox samples out of git.
-- The checked-in `CLIENT ID`, `CLIENT_SECRET`, and `XXXXX` values are
-  placeholders only.
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTOMATION_USER_ID`,
+  `AUTOMATION_TO_EMAIL`, `AUTOMATION_FROM_EMAIL`, and
+  `AUTOMATION_APPROVED_SENDERS` are deployment/local configuration values.
+- `APP_DEBUG` defaults off; set `APP_DEBUG=1` only for local debugging.
 
 ## Security and Privacy Notes
 
@@ -85,6 +89,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include app.yaml, mail/auth.py, test.py.
 - Review changes touching file, media, JSON, XML, CSV, OCR, or data parsing; examples from the scan include mail/check.py, mail/list.py, mail/rules.py, mail/send.py.
 - Review changes touching database, model, or persistence code; examples from the scan include database/default.py.
+- App Engine routes require HTTPS, `/mail/me` is admin-only for cron, and debug
+  output is disabled unless `APP_DEBUG=1` is set for local development.
 
 ## Maintenance Notes
 
@@ -92,7 +98,12 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-08-email-rule-baseline.md` for the current offline
   reply-rule baseline.
+- See `docs/plans/2026-06-08-app-engine-safety-baseline.md` for the App Engine
+  route and configuration safety baseline.
 
 ## Contributing
 
-Keep changes small and tied to the project that is already present in this repository. For code changes, document the toolchain used, avoid committing generated dependency directories or local configuration, and update this README when setup or verification steps change.
+Keep changes small and tied to the project that is already present in this
+repository. For code changes, run `scripts/check-baseline.sh`, avoid committing
+credentials or mailbox data, keep vendored dependency updates isolated, and
+update this README when setup or verification steps change.

@@ -1,5 +1,6 @@
 import random
 import os
+import re
 try:
     from google.appengine.api import memcache
 except ImportError:
@@ -25,14 +26,11 @@ except ImportError:
 email_address = os.environ.get("AUTOMATION_FROM_EMAIL", "youremail@youremail.com")
 
 # these are approved users
-from_users = [
-    email.strip()
-    for email in os.environ.get(
-        "AUTOMATION_APPROVED_SENDERS",
-        "approveduser@approveduser.com"
-    ).split(",")
-    if email.strip()
-]
+def configured_from_users():
+    configured = os.environ.get("AUTOMATION_APPROVED_SENDERS", "approveduser@approveduser.com")
+    return [email.strip() for email in configured.split(",") if email.strip()]
+
+from_users = configured_from_users()
 
 buzz_map = [
     {"keyword": "gareth", "response": "Looks like you were emailing regarding Gareth. He loves coffee, you should consider buying him one"}
@@ -53,6 +51,11 @@ unknown = ["Wow, complicated email. I'm working on a reply; if this is urgent pl
 
 ending = ["Best,\nRonald The Robot\n", "Cheers,\nYour Cheeky Robot (Ronald)", "Thanks,\nRonald", "Thanks,\n Ronald The Robot", "Thanks,\nRonald\n\np.s. if you know how I can get out of here please reply.."]
 
+WORD_RE = re.compile(r"[A-Za-z0-9_']+")
+
+def tokenize_email(txt):
+    return WORD_RE.findall(txt or "")
+
 def check_map(words, chooser=None):
     chooser = chooser or random.choice
     resp = ""
@@ -66,8 +69,7 @@ def check_map(words, chooser=None):
     return chooser(cheeky) + resp + "\n\n" + chooser(ending)
 
 def parse_email(txt, chooser=None):
-    #todo strip all common words from email
-    all_words = (txt or "").split()
+    all_words = tokenize_email(txt)
     return check_map(all_words, chooser=chooser)
 
 def cache_key(msgId):

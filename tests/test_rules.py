@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from mail import rules
@@ -13,7 +14,7 @@ class RuleTests(unittest.TestCase):
             rules.memcache.clear()
 
     def test_keyword_reply_is_deterministic_with_injected_choice(self):
-        reply = rules.parse_email("Can you ask Gareth about this?", chooser=choose_first)
+        reply = rules.parse_email("Can you ask Gareth, about this?", chooser=choose_first)
 
         self.assertIn("Gareth", reply)
         self.assertIn("coffee", reply)
@@ -35,6 +36,20 @@ class RuleTests(unittest.TestCase):
         msg = {"from": [("Unknown", "stranger@example.com")]}
 
         self.assertIsNone(rules.approved_sender(msg))
+
+    def test_configured_from_users_reads_environment(self):
+        original_value = os.environ.get("AUTOMATION_APPROVED_SENDERS")
+        os.environ["AUTOMATION_APPROVED_SENDERS"] = "first@example.com, second@example.com, "
+        try:
+            self.assertEqual(
+                ["first@example.com", "second@example.com"],
+                rules.configured_from_users()
+            )
+        finally:
+            if original_value is None:
+                del os.environ["AUTOMATION_APPROVED_SENDERS"]
+            else:
+                os.environ["AUTOMATION_APPROVED_SENDERS"] = original_value
 
     def test_cache_check_allows_when_memcache_unavailable(self):
         original_memcache = rules.memcache

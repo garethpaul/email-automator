@@ -14,6 +14,7 @@ Email Automator is a Python 2 Google App Engine/Gmail API prototype. Most of the
 - Make reply-rule helpers importable in modern local Python without App Engine or Gmail dependencies.
 - Keep live Gmail sending behind the existing `sendEmail` path.
 - Add deterministic offline tests for keyword matching, unknown replies, approved sender checks, and duplicate-cache behavior.
+- Make keyword matching tolerate punctuation in normal email prose.
 - Remove unsafe emergency-service language from automated fallback replies.
 - Document that default tests do not access Gmail or real mailbox data.
 
@@ -29,7 +30,7 @@ Email Automator is a Python 2 Google App Engine/Gmail API prototype. Most of the
 
 Files: `mail/rules.py`, `tests/test_rules.py`
 
-Approach: Defer importing `mail.send` until a live send is requested, provide a local memcache fallback for offline tests, add approved-sender helper functions, and allow deterministic choice injection for tests.
+Approach: Defer importing `mail.send` until a live send is requested, provide a local memcache fallback for offline tests, add approved-sender helper functions, tokenize email text before keyword matching, and allow deterministic choice injection for tests.
 
 Verification: Unit tests import `mail.rules` under Python 3 without App Engine SDK modules and assert that a duplicate approved message is not sent twice.
 

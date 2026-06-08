@@ -20,17 +20,23 @@ from google.appengine.api import users
 
 
 http = httplib2.Http(memcache)
+CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', 'CLIENT ID')
+CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', 'CLIENT_SECRET')
 
 decorator = OAuth2Decorator(
-  client_id='CLIENT ID',
-  client_secret='CLIENT_SECRET',
+  client_id=CLIENT_ID,
+  client_secret=CLIENT_SECRET,
   scope=[
     'https://www.googleapis.com/auth/gmail.modify',
     'https://www.googleapis.com/auth/gmail.send'
   ], approval_prompt = 'force')
 
 def getAuth(userId):
+    if not userId:
+        webapp2.abort(400, detail='Missing userId for stored Gmail credentials')
     credentials = StorageByKeyName(default.CredentialsModel, userId, 'credentials').get()
+    if credentials is None:
+        webapp2.abort(401, detail='No stored Gmail credentials for userId')
     http = httplib2.Http()
     http = credentials.authorize(http)
     return http

@@ -5,10 +5,35 @@ runtime: python27
 api_version: 1
 threadsafe: yes
 
+env_variables:
+  APP_DEBUG: "0"
+  AUTOMATION_USER_ID: ""
+  AUTOMATION_TO_EMAIL: ""
+  AUTOMATION_FROM_EMAIL: ""
+  AUTOMATION_APPROVED_SENDERS: ""
+  GOOGLE_CLIENT_ID: ""
+  GOOGLE_CLIENT_SECRET: ""
+
 # main handlers
 handlers:
-- url: .*
+- url: /auth
   script: main.app
+  login: required
+  secure: always
+
+- url: /mail/me
+  script: main.app
+  login: admin
+  secure: always
+
+- url: /mail/.*
+  script: main.app
+  login: required
+  secure: always
+
+- url: /.*
+  script: main.app
+  secure: always
 
 # libraries used - https://cloud.google.com/appengine/docs/python/tools/libraries27
 libraries:
