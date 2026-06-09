@@ -37,6 +37,8 @@ Current baseline:
   committed query parameters.
 - Automation recipient checks compare normalized recipient addresses only, not
   display names.
+- Configured sender and recipient email addresses are validated before rule
+  checks use them.
 - The core `valid_email` send decision also requires the message to be
   addressed to the automation mailbox.
 - Automated reply subjects collapse line breaks and cap length before sending.

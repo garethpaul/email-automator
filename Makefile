@@ -1,4 +1,4 @@
-.PHONY: lint test verify check
+.PHONY: build lint test verify check
 
 PYTHON ?= python3
 
@@ -8,6 +8,9 @@ lint:
 test:
 	$(PYTHON) -m unittest discover -s tests -p "test*.py"
 
-verify: lint test
+build:
+	$(PYTHON) -m py_compile mail/rules.py tests/test_rules.py
+
+verify: lint test build
 
 check: verify

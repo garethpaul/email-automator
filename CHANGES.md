@@ -2,6 +2,9 @@
 
 ## 2026-06-09
 
+- Validated configured automation sender and recipient email addresses before
+  reply-rule matching.
+- Added a `make build` compile gate for the offline rule module and tests.
 - Normalized automated reply subjects to one line before sending.
 - Required `valid_email` to enforce automation recipient-address matching before
   sending replies.

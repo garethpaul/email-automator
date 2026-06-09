@@ -75,7 +75,8 @@ scripts/check-baseline.sh
 `make check` runs the baseline gate and offline unittest discovery. These tests
 use deterministic fixtures, assert duplicate-message cache behavior, verify
 automation recipient matching by address in the handler and core send decision,
-verify reply subject normalization, and do not access Gmail or a real inbox.
+verify reply subject normalization, compile the rule module and tests through
+`make build`, and do not access Gmail or a real inbox.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -87,6 +88,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTOMATION_USER_ID`,
   `AUTOMATION_TO_EMAIL`, `AUTOMATION_FROM_EMAIL`, and
   `AUTOMATION_APPROVED_SENDERS` are deployment/local configuration values.
+- Configured sender and recipient email addresses are validated before reply
+  rules use them; malformed values are ignored instead of triggering replies.
 - `APP_DEBUG` defaults off; set `APP_DEBUG=1` only for local debugging.
 
 ## Security and Privacy Notes
@@ -113,6 +116,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   core send-decision recipient guard.
 - See `docs/plans/2026-06-09-email-reply-subject-normalization.md` for the
   automated reply subject guard.
+- See `docs/plans/2026-06-09-email-config-address-validation.md` for configured
+  automation email address validation.
 
 ## Contributing
 

@@ -24,17 +24,28 @@ except ImportError:
 
 # set email address of user
 email_address = os.environ.get("AUTOMATION_FROM_EMAIL", "youremail@youremail.com")
+CONFIG_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+\Z")
 
 def normalize_email_address(address):
     return (address or "").strip().lower()
 
+def valid_config_email(address):
+    return bool(CONFIG_EMAIL_RE.match(normalize_email_address(address)))
+
 # these are approved users
 def configured_from_users():
     configured = os.environ.get("AUTOMATION_APPROVED_SENDERS", "approveduser@approveduser.com")
-    return [normalize_email_address(email) for email in configured.split(",") if email.strip()]
+    return [
+        normalize_email_address(email)
+        for email in configured.split(",")
+        if email.strip() and valid_config_email(email)
+    ]
 
 def configured_to_email():
-    return normalize_email_address(os.environ.get("AUTOMATION_TO_EMAIL", "myemail@myemail.com"))
+    email = normalize_email_address(os.environ.get("AUTOMATION_TO_EMAIL", "myemail@myemail.com"))
+    if not valid_config_email(email):
+        return ""
+    return email
 
 def message_addressed_to_automation(msg, target_email=None):
     if target_email is None:

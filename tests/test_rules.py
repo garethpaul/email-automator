@@ -85,11 +85,35 @@ class RuleTests(unittest.TestCase):
             else:
                 os.environ["AUTOMATION_APPROVED_SENDERS"] = original_value
 
+    def test_configured_from_users_ignores_invalid_addresses(self):
+        original_value = os.environ.get("AUTOMATION_APPROVED_SENDERS")
+        os.environ["AUTOMATION_APPROVED_SENDERS"] = (
+            "first@example.com,not-an-address,second@example.com\r\nBcc: attacker@example.com"
+        )
+        try:
+            self.assertEqual(["first@example.com"], rules.configured_from_users())
+        finally:
+            if original_value is None:
+                del os.environ["AUTOMATION_APPROVED_SENDERS"]
+            else:
+                os.environ["AUTOMATION_APPROVED_SENDERS"] = original_value
+
     def test_configured_to_email_reads_environment(self):
         original_value = os.environ.get("AUTOMATION_TO_EMAIL")
         os.environ["AUTOMATION_TO_EMAIL"] = "Automation@Example.com "
         try:
             self.assertEqual("automation@example.com", rules.configured_to_email())
+        finally:
+            if original_value is None:
+                del os.environ["AUTOMATION_TO_EMAIL"]
+            else:
+                os.environ["AUTOMATION_TO_EMAIL"] = original_value
+
+    def test_configured_to_email_rejects_invalid_address(self):
+        original_value = os.environ.get("AUTOMATION_TO_EMAIL")
+        os.environ["AUTOMATION_TO_EMAIL"] = "automation@example.com\r\nBcc: attacker@example.com"
+        try:
+            self.assertEqual("", rules.configured_to_email())
         finally:
             if original_value is None:
                 del os.environ["AUTOMATION_TO_EMAIL"]
