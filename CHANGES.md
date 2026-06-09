@@ -2,6 +2,7 @@
 
 ## 2026-06-08
 
+- Added a root `make check` wrapper for the offline rule and safety baseline.
 - Made reply-rule helpers importable without App Engine/Gmail dependencies.
 - Added deterministic offline tests for keyword replies, unknown replies,
   approved sender checks, local cache checks, and duplicate-send prevention.

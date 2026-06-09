@@ -16,6 +16,7 @@ default repository verification path only exercises offline rule behavior.
 - `requirements.txt` - legacy Python dependency pins
 - `app.yaml` and `cron.yaml` - App Engine routing and scheduled check config
 - `database/` - App Engine credential model helpers
+- `Makefile` - repository-level verification wrapper
 - `mail/` - Gmail auth, listing, send, and reply-rule modules
 - `main.py` - App Engine webapp route registration
 - `SECURITY.md` - security reporting and disclosure guidance
@@ -58,17 +59,20 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 Run the offline rule tests:
 
 ```bash
+make check
 python3 -m unittest discover -s tests -p "test*.py"
 ```
 
 Run the full local baseline gate:
 
 ```bash
+make check
 scripts/check-baseline.sh
 ```
 
-These tests use deterministic fixtures, assert duplicate-message cache behavior,
-and do not access Gmail or a real inbox.
+`make check` runs the baseline gate and offline unittest discovery. These tests
+use deterministic fixtures, assert duplicate-message cache behavior, and do not
+access Gmail or a real inbox.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

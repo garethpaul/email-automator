@@ -2,6 +2,7 @@
 set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+CHECK_PLAN="$ROOT_DIR/docs/plans/2026-06-08-email-check-wrapper.md"
 
 cleanup_bytecode() {
   find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -21,6 +22,7 @@ require_file() {
 
 for path in \
   "README.md" \
+  "Makefile" \
   "VISION.md" \
   "CHANGES.md" \
   "app.yaml" \
@@ -31,6 +33,7 @@ for path in \
   "mail/list.py" \
   "mail/rules.py" \
   "tests/test_rules.py" \
+  "docs/plans/2026-06-08-email-check-wrapper.md" \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
@@ -51,16 +54,23 @@ else
 fi
 
 if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-baseline.md" ||
-  ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-app-engine-safety-baseline.md"; then
+  ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-app-engine-safety-baseline.md" ||
+  ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   printf '%s\n' "Plans must be marked completed." >&2
   exit 1
 fi
 
 if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   ! grep -Fq "offline" "$ROOT_DIR/README.md" ||
   ! grep -Fq "OAuth" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Gmail" "$ROOT_DIR/README.md"; then
-  printf '%s\n' "README must document offline tests and Gmail/OAuth boundaries." >&2
+  printf '%s\n' "README must document make check, offline tests, and Gmail/OAuth boundaries." >&2
+  exit 1
+fi
+
+if ! grep -Fq "check: verify" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile must expose make check as the repository verification wrapper." >&2
   exit 1
 fi
 
