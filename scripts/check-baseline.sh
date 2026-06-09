@@ -24,6 +24,7 @@ require_file() {
 
 for path in \
   "README.md" \
+  "SECURITY.md" \
   "Makefile" \
   "VISION.md" \
   "CHANGES.md" \
