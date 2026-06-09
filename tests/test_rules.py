@@ -43,6 +43,19 @@ class RuleTests(unittest.TestCase):
         self.assertIn("contact me directly", reply)
         self.assertNotIn("911", reply)
 
+    def test_reply_subject_removes_header_breaks(self):
+        subject = rules.reply_subject("Coffee\r\nBcc: attacker@example.com")
+
+        self.assertEqual("Re: Coffee Bcc: attacker@example.com", subject)
+        self.assertNotIn("\r", subject)
+        self.assertNotIn("\n", subject)
+
+    def test_reply_subject_handles_empty_and_long_subjects(self):
+        self.assertEqual("Re:", rules.reply_subject(" \n "))
+        subject = rules.reply_subject("x" * (rules.MAX_REPLY_SUBJECT_LENGTH + 20))
+
+        self.assertEqual(4 + rules.MAX_REPLY_SUBJECT_LENGTH, len(subject))
+
     def test_approved_sender_returns_allowed_address(self):
         msg = {"from": [("Allowed", "approveduser@approveduser.com")]}
 
@@ -121,6 +134,24 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(1, len(sent))
         self.assertEqual("approveduser@approveduser.com", sent[0][1])
         self.assertEqual("Re: Coffee", sent[0][2])
+
+    def test_valid_email_sanitizes_reply_subject(self):
+        sent = []
+        original_send = rules.sendEmail
+        rules.sendEmail = lambda *args: sent.append(args)
+        msg = {
+            "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "message-id",
+            "subject": "Coffee\r\nBcc: attacker@example.com",
+            "payload": "Please ask Gareth",
+        }
+        try:
+            self.assertTrue(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual("Re: Coffee Bcc: attacker@example.com", sent[0][2])
 
     def test_valid_email_rejects_message_not_addressed_to_automation(self):
         sent = []

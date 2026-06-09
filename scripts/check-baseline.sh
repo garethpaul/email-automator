@@ -4,6 +4,7 @@ set -eu
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 CHECK_PLAN="$ROOT_DIR/docs/plans/2026-06-08-email-check-wrapper.md"
 VALID_EMAIL_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-valid-email-recipient-guard.md"
+SUBJECT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-reply-subject-normalization.md"
 
 cleanup_bytecode() {
   find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -35,6 +36,7 @@ for path in \
   "mail/rules.py" \
   "tests/test_rules.py" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
+  "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
   "docs/plans/2026-06-08-email-check-wrapper.md" \
   "docs/plans/2026-06-08-email-approved-sender-normalization.md" \
@@ -62,8 +64,14 @@ if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-ba
   ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-approved-sender-normalization.md" ||
   ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-09-email-recipient-address-guard.md" ||
   ! grep -Fq "status: completed" "$VALID_EMAIL_PLAN" ||
+  ! grep -Fq "status: completed" "$SUBJECT_PLAN" ||
   ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   printf '%s\n' "Plans must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$SUBJECT_PLAN"; then
+  printf '%s\n' "Reply subject normalization plan must record make check verification." >&2
   exit 1
 fi
 
@@ -73,6 +81,16 @@ if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/README.md" ||
   ! grep -Fq "OAuth" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Gmail" "$ROOT_DIR/README.md"; then
   printf '%s\n' "README must document make check, offline tests, and Gmail/OAuth boundaries." >&2
+  exit 1
+fi
+
+if ! grep -Fq "reply subject normalization" "$ROOT_DIR/README.md"; then
+  printf '%s\n' "README must document reply subject normalization." >&2
+  exit 1
+fi
+
+if ! grep -Fq "single-line and length-bounded" "$ROOT_DIR/SECURITY.md"; then
+  printf '%s\n' "SECURITY must document reply subject header handling." >&2
   exit 1
 fi
 
@@ -99,6 +117,15 @@ fi
 if ! grep -Fq "def tokenize_email" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "Gareth," "$ROOT_DIR/tests/test_rules.py"; then
   printf '%s\n' "Rule tests must cover punctuation-tolerant keyword matching." >&2
+  exit 1
+fi
+
+if ! grep -Fq "MAX_REPLY_SUBJECT_LENGTH" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "def reply_subject" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "reply_subject(msg.get('subject', \"\"))" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "test_reply_subject_removes_header_breaks" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "test_valid_email_sanitizes_reply_subject" "$ROOT_DIR/tests/test_rules.py"; then
+  printf '%s\n' "Rule tests must cover single-line reply subject normalization." >&2
   exit 1
 fi
 

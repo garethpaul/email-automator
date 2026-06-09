@@ -39,6 +39,7 @@ Current baseline:
   display names.
 - The core `valid_email` send decision also requires the message to be
   addressed to the automation mailbox.
+- Automated reply subjects collapse line breaks and cap length before sending.
 
 Next priorities:
 

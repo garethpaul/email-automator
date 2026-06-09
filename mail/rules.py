@@ -75,9 +75,18 @@ unknown = ["Wow, complicated email. I'm working on a reply; if this is urgent pl
 ending = ["Best,\nRonald The Robot\n", "Cheers,\nYour Cheeky Robot (Ronald)", "Thanks,\nRonald", "Thanks,\n Ronald The Robot", "Thanks,\nRonald\n\np.s. if you know how I can get out of here please reply.."]
 
 WORD_RE = re.compile(r"[A-Za-z0-9_']+")
+MAX_REPLY_SUBJECT_LENGTH = 200
 
 def tokenize_email(txt):
     return WORD_RE.findall(txt or "")
+
+def reply_subject(subject):
+    normalized = " ".join((subject or "").splitlines()).strip()
+    if len(normalized) > MAX_REPLY_SUBJECT_LENGTH:
+        normalized = normalized[:MAX_REPLY_SUBJECT_LENGTH].rstrip()
+    if not normalized:
+        return "Re:"
+    return "Re: " + normalized
 
 def check_map(words, chooser=None):
     chooser = chooser or random.choice
@@ -124,7 +133,7 @@ def valid_email(msg, user_id):
         return False
     msgId = msg.get('msgId')
     if msgId and cache_check(msgId):
-        sendEmail(user_id, sender, "Re: " + msg.get('subject', ""), parse_email(msg.get('payload', "")))
+        sendEmail(user_id, sender, reply_subject(msg.get('subject', "")), parse_email(msg.get('payload', "")))
         if memcache is not None:
             memcache.add(cache_key(msgId), msgId)
         return True

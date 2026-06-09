@@ -2,6 +2,7 @@
 
 ## 2026-06-09
 
+- Normalized automated reply subjects to one line before sending.
 - Required `valid_email` to enforce automation recipient-address matching before
   sending replies.
 - Matched automation recipients by normalized `To:` address only, preventing
