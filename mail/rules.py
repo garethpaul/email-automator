@@ -91,10 +91,14 @@ unknown = ["Wow, complicated email. I'm working on a reply; if this is urgent pl
 ending = ["Best,\nRonald The Robot\n", "Cheers,\nYour Cheeky Robot (Ronald)", "Thanks,\nRonald", "Thanks,\n Ronald The Robot", "Thanks,\nRonald\n\np.s. if you know how I can get out of here please reply.."]
 
 WORD_RE = re.compile(r"[A-Za-z0-9_']+")
+MAX_EMAIL_BODY_LENGTH = 10000
 MAX_REPLY_SUBJECT_LENGTH = 200
 
+def bounded_email_body(txt):
+    return (txt or "")[:MAX_EMAIL_BODY_LENGTH]
+
 def tokenize_email(txt):
-    return WORD_RE.findall(txt or "")
+    return WORD_RE.findall(bounded_email_body(txt))
 
 def reply_subject(subject):
     normalized = " ".join((subject or "").splitlines()).strip()

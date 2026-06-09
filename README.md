@@ -55,6 +55,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `mail/rules.py` contains the offline-testable automated reply rule logic,
   including recipient-address checks for the automation mailbox and single-line
   reply subject normalization.
+- Automated reply rule matching scans only the first 10000 characters of an
+  inbound body before generating response text.
 
 ## Testing and Verification
 
@@ -76,7 +78,8 @@ scripts/check-baseline.sh
 use deterministic fixtures, assert duplicate-message cache behavior, verify
 automation recipient matching by address in the handler and core send decision,
 verify reply subject normalization, compile the rule module and tests through
-`make build`, and do not access Gmail or a real inbox.
+`make build`, cover bounded inbound body matching, and do not access Gmail or a
+real inbox.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -92,6 +95,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   rules use them; malformed values are ignored instead of triggering replies.
 - Outbound `AUTOMATION_FROM_EMAIL` is validated before `CreateMessage` is
   called, and invalid From configuration prevents automated sends.
+- Automated reply rule matching scans only a bounded inbound body prefix before
+  generating response text.
 - `APP_DEBUG` defaults off; set `APP_DEBUG=1` only for local debugging.
 
 ## Security and Privacy Notes
@@ -122,6 +127,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   automation email address validation.
 - See `docs/plans/2026-06-09-email-outbound-from-address-validation.md` for
   outbound From address validation.
+- See `docs/plans/2026-06-09-email-rule-body-length-limit.md` for the inbound
+  body length limit used by reply-rule matching.
 
 ## Contributing
 

@@ -45,6 +45,11 @@ class RuleTests(unittest.TestCase):
         self.assertIn("contact me directly", reply)
         self.assertNotIn("911", reply)
 
+    def test_tokenize_email_ignores_text_after_body_limit(self):
+        body = (" " * rules.MAX_EMAIL_BODY_LENGTH) + "Gareth"
+
+        self.assertEqual([], rules.tokenize_email(body))
+
     def test_reply_subject_removes_header_breaks(self):
         subject = rules.reply_subject("Coffee\r\nBcc: attacker@example.com")
 

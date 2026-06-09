@@ -44,6 +44,7 @@ Current baseline:
 - The core `valid_email` send decision also requires the message to be
   addressed to the automation mailbox.
 - Automated reply subjects collapse line breaks and cap length before sending.
+- Rule matching is limited to the first 10000 characters of an inbound body.
 
 Next priorities:
 

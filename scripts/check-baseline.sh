@@ -7,6 +7,7 @@ VALID_EMAIL_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-valid-email-recipient-gu
 SUBJECT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-reply-subject-normalization.md"
 CONFIG_ADDRESS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-config-address-validation.md"
 FROM_ADDRESS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-outbound-from-address-validation.md"
+BODY_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-rule-body-length-limit.md"
 
 cleanup_bytecode() {
   find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -41,6 +42,7 @@ for path in \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
   "docs/plans/2026-06-09-email-outbound-from-address-validation.md" \
+  "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
   "docs/plans/2026-06-08-email-check-wrapper.md" \
@@ -71,6 +73,7 @@ if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-ba
   ! grep -Fq "status: completed" "$VALID_EMAIL_PLAN" ||
   ! grep -Fq "status: completed" "$CONFIG_ADDRESS_PLAN" ||
   ! grep -Fq "status: completed" "$FROM_ADDRESS_PLAN" ||
+  ! grep -Fq "status: completed" "$BODY_LIMIT_PLAN" ||
   ! grep -Fq "status: completed" "$SUBJECT_PLAN" ||
   ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   printf '%s\n' "Plans must be marked completed." >&2
@@ -89,6 +92,11 @@ fi
 
 if ! grep -Fq "make check" "$FROM_ADDRESS_PLAN"; then
   printf '%s\n' "Outbound From address validation plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$BODY_LIMIT_PLAN"; then
+  printf '%s\n' "Email rule body length limit plan must record make check verification." >&2
   exit 1
 fi
 
@@ -116,6 +124,11 @@ if ! grep -Fq "Outbound \`AUTOMATION_FROM_EMAIL\` is validated" "$ROOT_DIR/READM
   exit 1
 fi
 
+if ! grep -Fq "Automated reply rule matching scans only the first 10000 characters" "$ROOT_DIR/README.md"; then
+  printf '%s\n' "README must document the rule body length limit." >&2
+  exit 1
+fi
+
 if ! grep -Fq "single-line and length-bounded" "$ROOT_DIR/SECURITY.md"; then
   printf '%s\n' "SECURITY must document reply subject header handling." >&2
   exit 1
@@ -128,6 +141,11 @@ fi
 
 if ! grep -Fq "Outbound automation From addresses" "$ROOT_DIR/SECURITY.md"; then
   printf '%s\n' "SECURITY must document outbound From address validation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Automated reply rule matching is limited to the first 10000 characters" "$ROOT_DIR/SECURITY.md"; then
+  printf '%s\n' "SECURITY must document the rule body length limit." >&2
   exit 1
 fi
 
@@ -158,8 +176,17 @@ if ! grep -Fq "_LocalMemcache" "$ROOT_DIR/mail/rules.py" ||
 fi
 
 if ! grep -Fq "def tokenize_email" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "MAX_EMAIL_BODY_LENGTH" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "def bounded_email_body" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "Gareth," "$ROOT_DIR/tests/test_rules.py"; then
   printf '%s\n' "Rule tests must cover punctuation-tolerant keyword matching." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_tokenize_email_ignores_text_after_body_limit" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "MAX_EMAIL_BODY_LENGTH" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "Rule matching is limited to the first 10000 characters" "$ROOT_DIR/VISION.md"; then
+  printf '%s\n' "Rule tests and docs must cover bounded inbound body matching." >&2
   exit 1
 fi
 
