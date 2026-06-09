@@ -37,6 +37,8 @@ Current baseline:
   committed query parameters.
 - Automation recipient checks compare normalized recipient addresses only, not
   display names.
+- The core `valid_email` send decision also requires the message to be
+  addressed to the automation mailbox.
 
 Next priorities:
 

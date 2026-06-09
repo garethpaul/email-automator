@@ -10,8 +10,24 @@ def choose_first(options):
 
 class RuleTests(unittest.TestCase):
     def setUp(self):
+        self._original_env = {
+            "AUTOMATION_APPROVED_SENDERS": os.environ.get("AUTOMATION_APPROVED_SENDERS"),
+            "AUTOMATION_TO_EMAIL": os.environ.get("AUTOMATION_TO_EMAIL"),
+        }
+        self._original_from_users = rules.from_users
+        os.environ["AUTOMATION_APPROVED_SENDERS"] = "approveduser@approveduser.com"
+        os.environ["AUTOMATION_TO_EMAIL"] = "myemail@myemail.com"
+        rules.from_users = rules.configured_from_users()
         if hasattr(rules.memcache, "clear"):
             rules.memcache.clear()
+
+    def tearDown(self):
+        rules.from_users = self._original_from_users
+        for name, value in self._original_env.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
 
     def test_keyword_reply_is_deterministic_with_injected_choice(self):
         reply = rules.parse_email("Can you ask Gareth, about this?", chooser=choose_first)
@@ -91,6 +107,7 @@ class RuleTests(unittest.TestCase):
         rules.sendEmail = lambda *args: sent.append(args)
         msg = {
             "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": [("Automation", "myemail@myemail.com")],
             "msgId": "message-id",
             "subject": "Coffee",
             "payload": "Please ask Gareth",
@@ -104,6 +121,24 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(1, len(sent))
         self.assertEqual("approveduser@approveduser.com", sent[0][1])
         self.assertEqual("Re: Coffee", sent[0][2])
+
+    def test_valid_email_rejects_message_not_addressed_to_automation(self):
+        sent = []
+        original_send = rules.sendEmail
+        rules.sendEmail = lambda *args: sent.append(args)
+        msg = {
+            "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": [("Other", "other@example.com")],
+            "msgId": "message-id",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+        try:
+            self.assertFalse(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual([], sent)
 
 
 if __name__ == "__main__":

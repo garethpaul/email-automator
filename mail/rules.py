@@ -120,7 +120,8 @@ def valid_email(msg, user_id):
     sender = approved_sender(msg)
     if sender is None:
         return False
-
+    if not message_addressed_to_automation(msg):
+        return False
     msgId = msg.get('msgId')
     if msgId and cache_check(msgId):
         sendEmail(user_id, sender, "Re: " + msg.get('subject', ""), parse_email(msg.get('payload', "")))

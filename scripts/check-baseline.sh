@@ -3,6 +3,7 @@ set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 CHECK_PLAN="$ROOT_DIR/docs/plans/2026-06-08-email-check-wrapper.md"
+VALID_EMAIL_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-valid-email-recipient-guard.md"
 
 cleanup_bytecode() {
   find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -34,6 +35,7 @@ for path in \
   "mail/rules.py" \
   "tests/test_rules.py" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
+  "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
   "docs/plans/2026-06-08-email-check-wrapper.md" \
   "docs/plans/2026-06-08-email-approved-sender-normalization.md" \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
@@ -59,6 +61,7 @@ if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-ba
   ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-app-engine-safety-baseline.md" ||
   ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-approved-sender-normalization.md" ||
   ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-09-email-recipient-address-guard.md" ||
+  ! grep -Fq "status: completed" "$VALID_EMAIL_PLAN" ||
   ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   printf '%s\n' "Plans must be marked completed." >&2
   exit 1
@@ -126,9 +129,11 @@ if ! grep -Fq "AUTOMATION_USER_ID" "$ROOT_DIR/mail/list.py" ||
   ! grep -Fq "AUTOMATION_USER_ID" "$ROOT_DIR/mail/check.py" ||
   ! grep -Fq "def configured_to_email" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "def message_addressed_to_automation" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "if not message_addressed_to_automation(msg)" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "message_addressed_to_automation(msg)" "$ROOT_DIR/mail/list.py" ||
   ! grep -Fq "test_message_addressed_to_automation_ignores_display_name_match" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "test_message_addressed_to_automation_matches_address_case_insensitively" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "test_valid_email_rejects_message_not_addressed_to_automation" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "AUTOMATION_FROM_EMAIL" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "AUTOMATION_APPROVED_SENDERS" "$ROOT_DIR/mail/rules.py"; then
   printf '%s\n' "Automation mailbox settings must come from environment-backed configuration." >&2

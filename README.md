@@ -73,8 +73,8 @@ scripts/check-baseline.sh
 
 `make check` runs the baseline gate and offline unittest discovery. These tests
 use deterministic fixtures, assert duplicate-message cache behavior, verify
-automation recipient matching by address, and do not access Gmail or a real
-inbox.
+automation recipient matching by address in the handler and core send decision,
+and do not access Gmail or a real inbox.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -108,6 +108,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   route and configuration safety baseline.
 - See `docs/plans/2026-06-09-email-recipient-address-guard.md` for the
   automation recipient-address guard.
+- See `docs/plans/2026-06-09-email-valid-email-recipient-guard.md` for the
+  core send-decision recipient guard.
 
 ## Contributing
 

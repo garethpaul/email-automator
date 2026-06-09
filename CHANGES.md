@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Required `valid_email` to enforce automation recipient-address matching before
+  sending replies.
 - Matched automation recipients by normalized `To:` address only, preventing
   display-name matches from triggering replies.
 - Added offline tests and a baseline guard for recipient-address matching.
