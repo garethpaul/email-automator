@@ -13,10 +13,12 @@ class RuleTests(unittest.TestCase):
         self._original_env = {
             "AUTOMATION_APPROVED_SENDERS": os.environ.get("AUTOMATION_APPROVED_SENDERS"),
             "AUTOMATION_TO_EMAIL": os.environ.get("AUTOMATION_TO_EMAIL"),
+            "AUTOMATION_FROM_EMAIL": os.environ.get("AUTOMATION_FROM_EMAIL"),
         }
         self._original_from_users = rules.from_users
         os.environ["AUTOMATION_APPROVED_SENDERS"] = "approveduser@approveduser.com"
         os.environ["AUTOMATION_TO_EMAIL"] = "myemail@myemail.com"
+        os.environ["AUTOMATION_FROM_EMAIL"] = "youremail@youremail.com"
         rules.from_users = rules.configured_from_users()
         if hasattr(rules.memcache, "clear"):
             rules.memcache.clear()
@@ -120,6 +122,33 @@ class RuleTests(unittest.TestCase):
             else:
                 os.environ["AUTOMATION_TO_EMAIL"] = original_value
 
+    def test_configured_from_email_reads_environment(self):
+        original_value = os.environ.get("AUTOMATION_FROM_EMAIL")
+        os.environ["AUTOMATION_FROM_EMAIL"] = "Robot@Example.com "
+        try:
+            self.assertEqual("robot@example.com", rules.configured_from_email())
+        finally:
+            if original_value is None:
+                del os.environ["AUTOMATION_FROM_EMAIL"]
+            else:
+                os.environ["AUTOMATION_FROM_EMAIL"] = original_value
+
+    def test_configured_from_email_rejects_invalid_address(self):
+        original_value = os.environ.get("AUTOMATION_FROM_EMAIL")
+        os.environ["AUTOMATION_FROM_EMAIL"] = "robot@example.com\r\nBcc: attacker@example.com"
+        try:
+            self.assertEqual("", rules.configured_from_email())
+        finally:
+            if original_value is None:
+                del os.environ["AUTOMATION_FROM_EMAIL"]
+            else:
+                os.environ["AUTOMATION_FROM_EMAIL"] = original_value
+
+    def test_send_email_rejects_invalid_from_email_before_importing_sender(self):
+        os.environ["AUTOMATION_FROM_EMAIL"] = "robot@example.com\r\nBcc: attacker@example.com"
+
+        self.assertFalse(rules.sendEmail("user-id", "approveduser@approveduser.com", "Subject", "Body"))
+
     def test_message_addressed_to_automation_matches_address_case_insensitively(self):
         msg = {"to": [("Automation", "Automation@Example.com")]}
 
@@ -141,7 +170,7 @@ class RuleTests(unittest.TestCase):
     def test_valid_email_sends_approved_message_once(self):
         sent = []
         original_send = rules.sendEmail
-        rules.sendEmail = lambda *args: sent.append(args)
+        rules.sendEmail = lambda *args: sent.append(args) or True
         msg = {
             "from": [("Allowed", "approveduser@approveduser.com")],
             "to": [("Automation", "myemail@myemail.com")],
@@ -162,7 +191,7 @@ class RuleTests(unittest.TestCase):
     def test_valid_email_sanitizes_reply_subject(self):
         sent = []
         original_send = rules.sendEmail
-        rules.sendEmail = lambda *args: sent.append(args)
+        rules.sendEmail = lambda *args: sent.append(args) or True
         msg = {
             "from": [("Allowed", "approveduser@approveduser.com")],
             "to": [("Automation", "myemail@myemail.com")],
@@ -180,7 +209,7 @@ class RuleTests(unittest.TestCase):
     def test_valid_email_rejects_message_not_addressed_to_automation(self):
         sent = []
         original_send = rules.sendEmail
-        rules.sendEmail = lambda *args: sent.append(args)
+        rules.sendEmail = lambda *args: sent.append(args) or True
         msg = {
             "from": [("Allowed", "approveduser@approveduser.com")],
             "to": [("Other", "other@example.com")],
@@ -194,6 +223,19 @@ class RuleTests(unittest.TestCase):
             rules.sendEmail = original_send
 
         self.assertEqual([], sent)
+
+    def test_valid_email_rejects_invalid_from_email(self):
+        os.environ["AUTOMATION_FROM_EMAIL"] = "robot@example.com\r\nBcc: attacker@example.com"
+        msg = {
+            "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "message-id",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+
+        self.assertFalse(rules.valid_email(msg, "user-id"))
+        self.assertTrue(rules.cache_check("message-id"))
 
 
 if __name__ == "__main__":

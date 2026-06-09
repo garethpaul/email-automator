@@ -90,6 +90,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   `AUTOMATION_APPROVED_SENDERS` are deployment/local configuration values.
 - Configured sender and recipient email addresses are validated before reply
   rules use them; malformed values are ignored instead of triggering replies.
+- Outbound `AUTOMATION_FROM_EMAIL` is validated before `CreateMessage` is
+  called, and invalid From configuration prevents automated sends.
 - `APP_DEBUG` defaults off; set `APP_DEBUG=1` only for local debugging.
 
 ## Security and Privacy Notes
@@ -118,6 +120,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   automated reply subject guard.
 - See `docs/plans/2026-06-09-email-config-address-validation.md` for configured
   automation email address validation.
+- See `docs/plans/2026-06-09-email-outbound-from-address-validation.md` for
+  outbound From address validation.
 
 ## Contributing
 

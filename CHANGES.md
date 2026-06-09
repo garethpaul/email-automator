@@ -2,6 +2,7 @@
 
 ## 2026-06-09
 
+- Validated outbound automation From addresses before creating Gmail messages.
 - Validated configured automation sender and recipient email addresses before
   reply-rule matching.
 - Added a `make build` compile gate for the offline rule module and tests.

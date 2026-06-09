@@ -22,9 +22,8 @@ except ImportError:
 
     memcache = _LocalMemcache()
 
-# set email address of user
-email_address = os.environ.get("AUTOMATION_FROM_EMAIL", "youremail@youremail.com")
 CONFIG_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+\Z")
+DEFAULT_FROM_EMAIL = "youremail@youremail.com"
 
 def normalize_email_address(address):
     return (address or "").strip().lower()
@@ -43,6 +42,12 @@ def configured_from_users():
 
 def configured_to_email():
     email = normalize_email_address(os.environ.get("AUTOMATION_TO_EMAIL", "myemail@myemail.com"))
+    if not valid_config_email(email):
+        return ""
+    return email
+
+def configured_from_email():
+    email = normalize_email_address(os.environ.get("AUTOMATION_FROM_EMAIL", DEFAULT_FROM_EMAIL))
     if not valid_config_email(email):
         return ""
     return email
@@ -144,17 +149,22 @@ def valid_email(msg, user_id):
         return False
     msgId = msg.get('msgId')
     if msgId and cache_check(msgId):
-        sendEmail(user_id, sender, reply_subject(msg.get('subject', "")), parse_email(msg.get('payload', "")))
+        sent = sendEmail(user_id, sender, reply_subject(msg.get('subject', "")), parse_email(msg.get('payload', "")))
+        if not sent:
+            return False
         if memcache is not None:
             memcache.add(cache_key(msgId), msgId)
         return True
     return False
 
 def sendEmail(user_id, to, subject, msg):
+    from_email = configured_from_email()
+    if not from_email:
+        return False
     # if not in cache
     # do cache check for sent email messages
     try:
         from . import send
     except (ImportError, ValueError):
         import send
-    send.SendMessage(user_id, send.CreateMessage(email_address, to, subject, msg))
+    return send.SendMessage(user_id, send.CreateMessage(from_email, to, subject, msg)) is not None

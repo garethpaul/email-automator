@@ -6,6 +6,7 @@ CHECK_PLAN="$ROOT_DIR/docs/plans/2026-06-08-email-check-wrapper.md"
 VALID_EMAIL_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-valid-email-recipient-guard.md"
 SUBJECT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-reply-subject-normalization.md"
 CONFIG_ADDRESS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-config-address-validation.md"
+FROM_ADDRESS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-outbound-from-address-validation.md"
 
 cleanup_bytecode() {
   find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -39,6 +40,7 @@ for path in \
   "tests/test_rules.py" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
+  "docs/plans/2026-06-09-email-outbound-from-address-validation.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
   "docs/plans/2026-06-08-email-check-wrapper.md" \
@@ -68,6 +70,7 @@ if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-ba
   ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-09-email-recipient-address-guard.md" ||
   ! grep -Fq "status: completed" "$VALID_EMAIL_PLAN" ||
   ! grep -Fq "status: completed" "$CONFIG_ADDRESS_PLAN" ||
+  ! grep -Fq "status: completed" "$FROM_ADDRESS_PLAN" ||
   ! grep -Fq "status: completed" "$SUBJECT_PLAN" ||
   ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   printf '%s\n' "Plans must be marked completed." >&2
@@ -81,6 +84,11 @@ fi
 
 if ! grep -Fq "make check" "$CONFIG_ADDRESS_PLAN"; then
   printf '%s\n' "Config address validation plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$FROM_ADDRESS_PLAN"; then
+  printf '%s\n' "Outbound From address validation plan must record make check verification." >&2
   exit 1
 fi
 
@@ -103,6 +111,11 @@ if ! grep -Fq "Configured sender and recipient email addresses are validated" "$
   exit 1
 fi
 
+if ! grep -Fq "Outbound \`AUTOMATION_FROM_EMAIL\` is validated" "$ROOT_DIR/README.md"; then
+  printf '%s\n' "README must document outbound From address validation." >&2
+  exit 1
+fi
+
 if ! grep -Fq "single-line and length-bounded" "$ROOT_DIR/SECURITY.md"; then
   printf '%s\n' "SECURITY must document reply subject header handling." >&2
   exit 1
@@ -110,6 +123,11 @@ fi
 
 if ! grep -Fq "Configured automation email addresses" "$ROOT_DIR/SECURITY.md"; then
   printf '%s\n' "SECURITY must document configured email address validation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Outbound automation From addresses" "$ROOT_DIR/SECURITY.md"; then
+  printf '%s\n' "SECURITY must document outbound From address validation." >&2
   exit 1
 fi
 
@@ -187,6 +205,11 @@ if ! grep -Fq "AUTOMATION_USER_ID" "$ROOT_DIR/mail/list.py" ||
   ! grep -Fq "test_message_addressed_to_automation_matches_address_case_insensitively" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "test_valid_email_rejects_message_not_addressed_to_automation" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "AUTOMATION_FROM_EMAIL" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "def configured_from_email" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "if not from_email" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "test_configured_from_email_rejects_invalid_address" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "test_send_email_rejects_invalid_from_email_before_importing_sender" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "test_valid_email_rejects_invalid_from_email" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "AUTOMATION_APPROVED_SENDERS" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "CONFIG_EMAIL_RE" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "def valid_config_email" "$ROOT_DIR/mail/rules.py" ||

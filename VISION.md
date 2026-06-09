@@ -39,6 +39,8 @@ Current baseline:
   display names.
 - Configured sender and recipient email addresses are validated before rule
   checks use them.
+- Outbound automation From addresses are validated before generated Gmail
+  messages are created.
 - The core `valid_email` send decision also requires the message to be
   addressed to the automation mailbox.
 - Automated reply subjects collapse line breaks and cap length before sending.
