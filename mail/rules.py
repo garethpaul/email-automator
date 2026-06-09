@@ -91,8 +91,10 @@ unknown = ["Wow, complicated email. I'm working on a reply; if this is urgent pl
 ending = ["Best,\nRonald The Robot\n", "Cheers,\nYour Cheeky Robot (Ronald)", "Thanks,\nRonald", "Thanks,\n Ronald The Robot", "Thanks,\nRonald\n\np.s. if you know how I can get out of here please reply.."]
 
 WORD_RE = re.compile(r"[A-Za-z0-9_']+")
+MESSAGE_ID_RE = re.compile(r"^[A-Za-z0-9._:-]+\Z")
 MAX_EMAIL_BODY_LENGTH = 10000
 MAX_REPLY_SUBJECT_LENGTH = 200
+MAX_MESSAGE_ID_LENGTH = 128
 
 def bounded_email_body(txt):
     return (txt or "")[:MAX_EMAIL_BODY_LENGTH]
@@ -124,15 +126,30 @@ def parse_email(txt, chooser=None):
     all_words = tokenize_email(txt)
     return check_map(all_words, chooser=chooser)
 
+def normalize_message_id(msgId):
+    try:
+        msgId = (msgId or "").strip()
+    except AttributeError:
+        msgId = str(msgId).strip()
+    if not msgId or len(msgId) > MAX_MESSAGE_ID_LENGTH:
+        return ""
+    if not MESSAGE_ID_RE.match(msgId):
+        return ""
+    return msgId
+
 def cache_key(msgId):
-    return "msg_" + str(msgId)
+    msgId = normalize_message_id(msgId)
+    if not msgId:
+        return None
+    return "msg_" + msgId
 
 def cache_check(msgId):
-    if not msgId:
+    key = cache_key(msgId)
+    if not key:
         return False
     if memcache is None:
         return True
-    data = memcache.get(cache_key(msgId))
+    data = memcache.get(key)
     if data is not None:
         return False
     else:
@@ -151,7 +168,7 @@ def valid_email(msg, user_id):
         return False
     if not message_addressed_to_automation(msg):
         return False
-    msgId = msg.get('msgId')
+    msgId = normalize_message_id(msg.get('msgId'))
     if msgId and cache_check(msgId):
         sent = sendEmail(user_id, sender, reply_subject(msg.get('subject', "")), parse_email(msg.get('payload', "")))
         if not sent:

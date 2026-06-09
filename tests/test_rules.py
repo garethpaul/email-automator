@@ -172,6 +172,11 @@ class RuleTests(unittest.TestCase):
         finally:
             rules.memcache = original_memcache
 
+    def test_cache_key_rejects_malformed_message_ids(self):
+        self.assertEqual("msg_message-id:123", rules.cache_key(" message-id:123 "))
+        self.assertIsNone(rules.cache_key("message-id\r\nother"))
+        self.assertIsNone(rules.cache_key("x" * (rules.MAX_MESSAGE_ID_LENGTH + 1)))
+
     def test_valid_email_sends_approved_message_once(self):
         sent = []
         original_send = rules.sendEmail
@@ -241,6 +246,24 @@ class RuleTests(unittest.TestCase):
 
         self.assertFalse(rules.valid_email(msg, "user-id"))
         self.assertTrue(rules.cache_check("message-id"))
+
+    def test_valid_email_rejects_invalid_message_id(self):
+        sent = []
+        original_send = rules.sendEmail
+        rules.sendEmail = lambda *args: sent.append(args) or True
+        msg = {
+            "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "message-id\r\nother",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+        try:
+            self.assertFalse(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual([], sent)
 
 
 if __name__ == "__main__":

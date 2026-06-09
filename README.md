@@ -57,6 +57,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   reply subject normalization.
 - Automated reply rule matching scans only the first 10000 characters of an
   inbound body before generating response text.
+- Message IDs are normalized and length-bounded before duplicate-send cache keys
+  are built.
 
 ## Testing and Verification
 
@@ -97,6 +99,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   called, and invalid From configuration prevents automated sends.
 - Automated reply rule matching scans only a bounded inbound body prefix before
   generating response text.
+- Message IDs are normalized and length-bounded before memcache duplicate-send
+  keys are used.
 - `APP_DEBUG` defaults off; set `APP_DEBUG=1` only for local debugging.
 
 ## Security and Privacy Notes
@@ -129,6 +133,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   outbound From address validation.
 - See `docs/plans/2026-06-09-email-rule-body-length-limit.md` for the inbound
   body length limit used by reply-rule matching.
+- See `docs/plans/2026-06-09-email-message-id-cache-guard.md` for message ID
+  cache-key validation before duplicate-send checks.
 
 ## Contributing
 

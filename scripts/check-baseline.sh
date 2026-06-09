@@ -8,6 +8,7 @@ SUBJECT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-reply-subject-normalization.
 CONFIG_ADDRESS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-config-address-validation.md"
 FROM_ADDRESS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-outbound-from-address-validation.md"
 BODY_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-rule-body-length-limit.md"
+MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-message-id-cache-guard.md"
 
 cleanup_bytecode() {
   find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -42,6 +43,7 @@ for path in \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
   "docs/plans/2026-06-09-email-outbound-from-address-validation.md" \
+  "docs/plans/2026-06-09-email-message-id-cache-guard.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
@@ -74,6 +76,7 @@ if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-ba
   ! grep -Fq "status: completed" "$CONFIG_ADDRESS_PLAN" ||
   ! grep -Fq "status: completed" "$FROM_ADDRESS_PLAN" ||
   ! grep -Fq "status: completed" "$BODY_LIMIT_PLAN" ||
+  ! grep -Fq "Status: Completed" "$MESSAGE_ID_PLAN" ||
   ! grep -Fq "status: completed" "$SUBJECT_PLAN" ||
   ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   printf '%s\n' "Plans must be marked completed." >&2
@@ -97,6 +100,11 @@ fi
 
 if ! grep -Fq "make check" "$BODY_LIMIT_PLAN"; then
   printf '%s\n' "Email rule body length limit plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$MESSAGE_ID_PLAN"; then
+  printf '%s\n' "Message ID cache guard plan must record make check verification." >&2
   exit 1
 fi
 
@@ -129,6 +137,11 @@ if ! grep -Fq "Automated reply rule matching scans only the first 10000 characte
   exit 1
 fi
 
+if ! grep -Fq "Message IDs are normalized and length-bounded" "$ROOT_DIR/README.md"; then
+  printf '%s\n' "README must document message ID cache-key validation." >&2
+  exit 1
+fi
+
 if ! grep -Fq "single-line and length-bounded" "$ROOT_DIR/SECURITY.md"; then
   printf '%s\n' "SECURITY must document reply subject header handling." >&2
   exit 1
@@ -146,6 +159,11 @@ fi
 
 if ! grep -Fq "Automated reply rule matching is limited to the first 10000 characters" "$ROOT_DIR/SECURITY.md"; then
   printf '%s\n' "SECURITY must document the rule body length limit." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Message IDs are normalized and length-bounded" "$ROOT_DIR/SECURITY.md"; then
+  printf '%s\n' "SECURITY must document message ID cache-key validation." >&2
   exit 1
 fi
 
@@ -196,6 +214,16 @@ if ! grep -Fq "MAX_REPLY_SUBJECT_LENGTH" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "test_reply_subject_removes_header_breaks" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "test_valid_email_sanitizes_reply_subject" "$ROOT_DIR/tests/test_rules.py"; then
   printf '%s\n' "Rule tests must cover single-line reply subject normalization." >&2
+  exit 1
+fi
+
+if ! grep -Fq "MAX_MESSAGE_ID_LENGTH" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "def normalize_message_id" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "MESSAGE_ID_RE" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "test_cache_key_rejects_malformed_message_ids" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "test_valid_email_rejects_invalid_message_id" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "Message IDs are normalized and length-bounded" "$ROOT_DIR/VISION.md"; then
+  printf '%s\n' "Rule tests and docs must cover message ID cache-key validation." >&2
   exit 1
 fi
 

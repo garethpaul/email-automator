@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Normalized and length-bounded inbound message IDs before duplicate-send cache
+  key use.
 - Limited automated reply rule matching to a bounded inbound body prefix.
 - Validated outbound automation From addresses before creating Gmail messages.
 - Validated configured automation sender and recipient email addresses before
