@@ -32,6 +32,11 @@ class RuleTests(unittest.TestCase):
 
         self.assertEqual("approveduser@approveduser.com", rules.approved_sender(msg))
 
+    def test_approved_sender_matches_address_case_insensitively(self):
+        msg = {"from": [("Allowed", "ApprovedUser@ApprovedUser.com")]}
+
+        self.assertEqual("ApprovedUser@ApprovedUser.com", rules.approved_sender(msg))
+
     def test_approved_sender_rejects_unknown_address(self):
         msg = {"from": [("Unknown", "stranger@example.com")]}
 

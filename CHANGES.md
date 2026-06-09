@@ -3,6 +3,8 @@
 ## 2026-06-08
 
 - Added a root `make check` wrapper for the offline rule and safety baseline.
+- Matched approved sender email addresses case-insensitively while preserving
+  the original sender header address for replies.
 - Made reply-rule helpers importable without App Engine/Gmail dependencies.
 - Added deterministic offline tests for keyword replies, unknown replies,
   approved sender checks, local cache checks, and duplicate-send prevention.

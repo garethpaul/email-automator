@@ -34,6 +34,7 @@ for path in \
   "mail/rules.py" \
   "tests/test_rules.py" \
   "docs/plans/2026-06-08-email-check-wrapper.md" \
+  "docs/plans/2026-06-08-email-approved-sender-normalization.md" \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
@@ -55,6 +56,7 @@ fi
 
 if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-baseline.md" ||
   ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-app-engine-safety-baseline.md" ||
+  ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-approved-sender-normalization.md" ||
   ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   printf '%s\n' "Plans must be marked completed." >&2
   exit 1
@@ -81,7 +83,9 @@ fi
 
 if ! grep -Fq "_LocalMemcache" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "cache_key" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "normalize_email_address" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "test_valid_email_sends_approved_message_once" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "test_approved_sender_matches_address_case_insensitively" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "test_configured_from_users_reads_environment" "$ROOT_DIR/tests/test_rules.py"; then
   printf '%s\n' "Offline rules baseline must keep local cache and duplicate-send coverage." >&2
   exit 1

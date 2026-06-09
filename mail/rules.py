@@ -25,10 +25,13 @@ except ImportError:
 # set email address of user
 email_address = os.environ.get("AUTOMATION_FROM_EMAIL", "youremail@youremail.com")
 
+def normalize_email_address(address):
+    return (address or "").strip().lower()
+
 # these are approved users
 def configured_from_users():
     configured = os.environ.get("AUTOMATION_APPROVED_SENDERS", "approveduser@approveduser.com")
-    return [email.strip() for email in configured.split(",") if email.strip()]
+    return [normalize_email_address(email) for email in configured.split(",") if email.strip()]
 
 from_users = configured_from_users()
 
@@ -87,8 +90,9 @@ def cache_check(msgId):
         return True
 
 def approved_sender(msg):
+    allowed = set(normalize_email_address(email) for email in from_users)
     for name, address in msg.get('from', []):
-        if address in from_users:
+        if normalize_email_address(address) in allowed:
             return address
     return None
 
