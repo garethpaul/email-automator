@@ -56,6 +56,27 @@ class RuleTests(unittest.TestCase):
             else:
                 os.environ["AUTOMATION_APPROVED_SENDERS"] = original_value
 
+    def test_configured_to_email_reads_environment(self):
+        original_value = os.environ.get("AUTOMATION_TO_EMAIL")
+        os.environ["AUTOMATION_TO_EMAIL"] = "Automation@Example.com "
+        try:
+            self.assertEqual("automation@example.com", rules.configured_to_email())
+        finally:
+            if original_value is None:
+                del os.environ["AUTOMATION_TO_EMAIL"]
+            else:
+                os.environ["AUTOMATION_TO_EMAIL"] = original_value
+
+    def test_message_addressed_to_automation_matches_address_case_insensitively(self):
+        msg = {"to": [("Automation", "Automation@Example.com")]}
+
+        self.assertTrue(rules.message_addressed_to_automation(msg, "automation@example.com"))
+
+    def test_message_addressed_to_automation_ignores_display_name_match(self):
+        msg = {"to": [("automation@example.com", "other@example.com")]}
+
+        self.assertFalse(rules.message_addressed_to_automation(msg, "automation@example.com"))
+
     def test_cache_check_allows_when_memcache_unavailable(self):
         original_memcache = rules.memcache
         rules.memcache = None

@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-09
+
+- Matched automation recipients by normalized `To:` address only, preventing
+  display-name matches from triggering replies.
+- Added offline tests and a baseline guard for recipient-address matching.
+
 ## 2026-06-08
 
 - Added a root `make check` wrapper for the offline rule and safety baseline.

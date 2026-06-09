@@ -52,7 +52,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   handlers, and restricts `/mail/me` to admin/cron access.
 - `cron.yaml` schedules `/mail/me`; the automation user id comes from
   `AUTOMATION_USER_ID` instead of a committed query parameter.
-- `mail/rules.py` contains the offline-testable automated reply rule logic.
+- `mail/rules.py` contains the offline-testable automated reply rule logic,
+  including recipient-address checks for the automation mailbox.
 
 ## Testing and Verification
 
@@ -71,8 +72,9 @@ scripts/check-baseline.sh
 ```
 
 `make check` runs the baseline gate and offline unittest discovery. These tests
-use deterministic fixtures, assert duplicate-message cache behavior, and do not
-access Gmail or a real inbox.
+use deterministic fixtures, assert duplicate-message cache behavior, verify
+automation recipient matching by address, and do not access Gmail or a real
+inbox.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -104,6 +106,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   reply-rule baseline.
 - See `docs/plans/2026-06-08-app-engine-safety-baseline.md` for the App Engine
   route and configuration safety baseline.
+- See `docs/plans/2026-06-09-email-recipient-address-guard.md` for the
+  automation recipient-address guard.
 
 ## Contributing
 

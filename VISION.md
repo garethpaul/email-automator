@@ -35,6 +35,8 @@ Current baseline:
   `/mail/me` is reserved for admin/cron access.
 - OAuth and automation mailbox placeholders are environment-backed instead of
   committed query parameters.
+- Automation recipient checks compare normalized recipient addresses only, not
+  display names.
 
 Next priorities:
 
@@ -51,6 +53,8 @@ Contribution rules:
 - Do not mix platform migration with reply behavior changes unless required.
 - Keep vendored dependency changes reviewable.
 - Verify behavior against test fixtures rather than real inbox data where possible.
+- Keep recipient and sender matching in offline-testable helpers before wiring
+  them into App Engine handlers.
 
 ## Security And Privacy
 

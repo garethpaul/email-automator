@@ -33,6 +33,26 @@ def configured_from_users():
     configured = os.environ.get("AUTOMATION_APPROVED_SENDERS", "approveduser@approveduser.com")
     return [normalize_email_address(email) for email in configured.split(",") if email.strip()]
 
+def configured_to_email():
+    return normalize_email_address(os.environ.get("AUTOMATION_TO_EMAIL", "myemail@myemail.com"))
+
+def message_addressed_to_automation(msg, target_email=None):
+    if target_email is None:
+        target = configured_to_email()
+    else:
+        target = normalize_email_address(target_email)
+    if not target:
+        return False
+
+    for recipient in msg.get('to', []):
+        try:
+            address = recipient[1]
+        except (TypeError, IndexError):
+            continue
+        if normalize_email_address(address) == target:
+            return True
+    return False
+
 from_users = configured_from_users()
 
 buzz_map = [

@@ -33,6 +33,7 @@ for path in \
   "mail/list.py" \
   "mail/rules.py" \
   "tests/test_rules.py" \
+  "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-08-email-check-wrapper.md" \
   "docs/plans/2026-06-08-email-approved-sender-normalization.md" \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
@@ -57,6 +58,7 @@ fi
 if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-baseline.md" ||
   ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-app-engine-safety-baseline.md" ||
   ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-approved-sender-normalization.md" ||
+  ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-09-email-recipient-address-guard.md" ||
   ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   printf '%s\n' "Plans must be marked completed." >&2
   exit 1
@@ -122,9 +124,20 @@ fi
 
 if ! grep -Fq "AUTOMATION_USER_ID" "$ROOT_DIR/mail/list.py" ||
   ! grep -Fq "AUTOMATION_USER_ID" "$ROOT_DIR/mail/check.py" ||
+  ! grep -Fq "def configured_to_email" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "def message_addressed_to_automation" "$ROOT_DIR/mail/rules.py" ||
+  ! grep -Fq "message_addressed_to_automation(msg)" "$ROOT_DIR/mail/list.py" ||
+  ! grep -Fq "test_message_addressed_to_automation_ignores_display_name_match" "$ROOT_DIR/tests/test_rules.py" ||
+  ! grep -Fq "test_message_addressed_to_automation_matches_address_case_insensitively" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "AUTOMATION_FROM_EMAIL" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "AUTOMATION_APPROVED_SENDERS" "$ROOT_DIR/mail/rules.py"; then
   printf '%s\n' "Automation mailbox settings must come from environment-backed configuration." >&2
+  exit 1
+fi
+
+if grep -Fq "people[0] == my_email" "$ROOT_DIR/mail/list.py" ||
+  grep -Fq "people[1] == my_email" "$ROOT_DIR/mail/list.py"; then
+  printf '%s\n' "Automation recipient checks must compare normalized recipient addresses, not display names." >&2
   exit 1
 fi
 

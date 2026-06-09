@@ -39,9 +39,6 @@ domain="(?:"  +  dot_atom  +  "|"  +  domain_lit  +  ")"
 addr_spec=local  +  "\@"  +  domain
 email_address_re=re.compile('^'+addr_spec+'$')
 
-# Set this to the mailbox address that should trigger automation.
-my_email = os.environ.get("AUTOMATION_TO_EMAIL", "myemail@myemail.com")
-
 def request_user_id(handler):
     userId = handler.request.get("userId") or os.environ.get("AUTOMATION_USER_ID")
     if not userId:
@@ -233,15 +230,9 @@ class Single(webapp.RequestHandler):
         messages = ListMessagesWithLabels(service, userId, None)
         to_me = []
         for msg in messages:
-            tos = msg['to']
-            for people in tos:
-                if people[0] == my_email:
-                    rules.valid_email(msg, userId)
-                    to_me.append(msg)
-                    break
-                if people[1] == my_email:
-                    rules.valid_email(msg, userId)
-                    to_me.append(msg)
+            if rules.message_addressed_to_automation(msg):
+                rules.valid_email(msg, userId)
+                to_me.append(msg)
         self.response.out.write(json.dumps([], indent = 2, separators=(',', ': ')))
 
 class Handler(webapp.RequestHandler):
