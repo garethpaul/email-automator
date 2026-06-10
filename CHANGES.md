@@ -1,5 +1,14 @@
 # Changes
 
+## 2026-06-10
+
+- Added a GitHub Actions workflow that runs the offline `make check` baseline
+  on Python 3.10, 3.12, and 3.14.
+- Pinned workflow actions by commit, restricted repository permissions to
+  read-only, enabled stale-run cancellation, and bounded jobs to five minutes.
+- Extended the baseline checker and docs to require the hosted CI verification
+  path.
+
 ## 2026-06-09
 
 - Normalized and length-bounded inbound message IDs before duplicate-send cache

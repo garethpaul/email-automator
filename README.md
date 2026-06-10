@@ -83,6 +83,11 @@ verify reply subject normalization, compile the rule module and tests through
 `make build`, cover bounded inbound body matching, and do not access Gmail or a
 real inbox.
 
+GitHub Actions runs the same offline `make check` baseline on Python 3.10,
+3.12, and 3.14 for pushes, pull requests, and manual dispatches. The workflow
+pins its actions by commit, grants read-only repository access, and does not
+install the obsolete App Engine deployment requirements.
+
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
 ## Configuration and Secrets
@@ -135,6 +140,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   body length limit used by reply-rule matching.
 - See `docs/plans/2026-06-09-email-message-id-cache-guard.md` for message ID
   cache-key validation before duplicate-send checks.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the hosted GitHub Actions
+  baseline.
 
 ## Contributing
 

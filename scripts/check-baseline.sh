@@ -9,6 +9,8 @@ CONFIG_ADDRESS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-config-address-valida
 FROM_ADDRESS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-outbound-from-address-validation.md"
 BODY_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-rule-body-length-limit.md"
 MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-message-id-cache-guard.md"
+CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
+CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 
 cleanup_bytecode() {
   find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -34,6 +36,7 @@ for path in \
   "CHANGES.md" \
   "app.yaml" \
   "cron.yaml" \
+  ".github/workflows/check.yml" \
   "main.py" \
   "mail/auth.py" \
   "mail/check.py" \
@@ -44,6 +47,7 @@ for path in \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
   "docs/plans/2026-06-09-email-outbound-from-address-validation.md" \
   "docs/plans/2026-06-09-email-message-id-cache-guard.md" \
+  "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
@@ -77,9 +81,29 @@ if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-ba
   ! grep -Fq "status: completed" "$FROM_ADDRESS_PLAN" ||
   ! grep -Fq "status: completed" "$BODY_LIMIT_PLAN" ||
   ! grep -Fq "Status: Completed" "$MESSAGE_ID_PLAN" ||
+  ! grep -Fqi "status: completed" "$CI_PLAN" ||
   ! grep -Fq "status: completed" "$SUBJECT_PLAN" ||
   ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   printf '%s\n' "Plans must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$CI_PLAN"; then
+  printf '%s\n' "CI baseline plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" "$CI_WORKFLOW" ||
+  ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
+  ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
+  ! grep -Fq 'python-version: ${{ matrix.python-version }}' "$CI_WORKFLOW" ||
+  ! grep -Fq "run: make check" "$CI_WORKFLOW" ||
+  ! grep -Fq "permissions:" "$CI_WORKFLOW" ||
+  ! grep -Fq "contents: read" "$CI_WORKFLOW" ||
+  ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
+  ! grep -Fq "cancel-in-progress: true" "$CI_WORKFLOW" ||
+  ! grep -Fq "timeout-minutes: 5" "$CI_WORKFLOW"; then
+  printf '%s\n' "GitHub Actions workflow must run the pinned, read-only make check matrix." >&2
   exit 1
 fi
 
@@ -110,6 +134,7 @@ fi
 
 if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/README.md" ||
   ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "GitHub Actions" "$ROOT_DIR/README.md" ||
   ! grep -Fq "offline" "$ROOT_DIR/README.md" ||
   ! grep -Fq "OAuth" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Gmail" "$ROOT_DIR/README.md"; then
@@ -164,6 +189,19 @@ fi
 
 if ! grep -Fq "Message IDs are normalized and length-bounded" "$ROOT_DIR/SECURITY.md"; then
   printf '%s\n' "SECURITY must document message ID cache-key validation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "GitHub Actions" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "make check" "$ROOT_DIR/SECURITY.md"; then
+  printf '%s\n' "SECURITY must document the hosted CI verification boundary." >&2
+  exit 1
+fi
+
+if ! grep -Fq "GitHub Actions" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "docs/plans/2026-06-10-ci-baseline.md" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "GitHub Actions" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Project docs must record the GitHub Actions CI baseline." >&2
   exit 1
 fi
 

@@ -21,6 +21,7 @@ Priority:
 - Avoid committing OAuth credentials, app secrets, or private mailbox data
 - Preserve cron/task-queue intent for retrieval and processing
 - Keep App Engine setup requirements visible
+- Keep GitHub Actions aligned with the local `make check` baseline
 
 Current baseline:
 
@@ -47,6 +48,8 @@ Current baseline:
 - Rule matching is limited to the first 10000 characters of an inbound body.
 - Message IDs are normalized and length-bounded before duplicate-send cache keys
   are built.
+- GitHub Actions runs the offline `make check` baseline on Python 3.10, 3.12,
+  and 3.14 for pushes, pull requests, and manual dispatches.
 
 Next priorities:
 
@@ -60,6 +63,8 @@ Contribution rules:
 - One PR = one focused auth, mail processing, deployment, or documentation topic.
 - Run `scripts/check-baseline.sh` before pushing reply-rule, auth, or App
   Engine routing changes.
+- Keep `.github/workflows/check.yml` in sync with the local `make check`
+  contract.
 - Do not mix platform migration with reply behavior changes unless required.
 - Keep vendored dependency changes reviewable.
 - Verify behavior against test fixtures rather than real inbox data where possible.
