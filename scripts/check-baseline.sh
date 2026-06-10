@@ -10,6 +10,7 @@ FROM_ADDRESS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-outbound-from-address-v
 BODY_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-rule-body-length-limit.md"
 MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-message-id-cache-guard.md"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
+ATOMIC_DEDUP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-message-deduplication.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 
 cleanup_bytecode() {
@@ -48,6 +49,7 @@ for path in \
   "docs/plans/2026-06-09-email-outbound-from-address-validation.md" \
   "docs/plans/2026-06-09-email-message-id-cache-guard.md" \
   "docs/plans/2026-06-10-ci-baseline.md" \
+  "docs/plans/2026-06-10-atomic-message-deduplication.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
@@ -90,6 +92,12 @@ fi
 
 if ! grep -Fq "make check" "$CI_PLAN"; then
   printf '%s\n' "CI baseline plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Status: Completed" "$ATOMIC_DEDUP_PLAN" ||
+  ! grep -Fq "make check" "$ATOMIC_DEDUP_PLAN"; then
+  printf '%s\n' "Atomic message deduplication plan must remain completed with verification recorded." >&2
   exit 1
 fi
 
@@ -264,6 +272,21 @@ if ! grep -Fq "MAX_MESSAGE_ID_LENGTH" "$ROOT_DIR/mail/rules.py" ||
   printf '%s\n' "Rule tests and docs must cover message ID cache-key validation." >&2
   exit 1
 fi
+
+for dedup_contract in \
+  "def reserve_message_id" \
+  "memcache.add(key, msgId)" \
+  "def release_message_id" \
+  "memcache.delete(key)" \
+  "if msgId and reserve_message_id(msgId)" \
+  "test_valid_email_reserves_message_before_sending" \
+  "test_valid_email_releases_reservation_after_failed_send" \
+  "test_valid_email_releases_reservation_after_send_exception"; do
+  if ! grep -Fq "$dedup_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Atomic message deduplication contract is missing: $dedup_contract" >&2
+    exit 1
+  fi
+done
 
 if ! grep -Fq "APP_DEBUG" "$ROOT_DIR/main.py" ||
   ! grep -Fq "debug=DEBUG" "$ROOT_DIR/main.py" ||

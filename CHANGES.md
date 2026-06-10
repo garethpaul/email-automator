@@ -2,6 +2,11 @@
 
 ## 2026-06-10
 
+- Reserved normalized message IDs atomically before outbound Gmail sends so
+  concurrent workers cannot both perform the same side effect.
+- Released message reservations after false or raised send failures so later
+  retries remain possible.
+- Added re-entrant concurrency and failure-path regression coverage.
 - Added a GitHub Actions workflow that runs the offline `make check` baseline
   on Python 3.10, 3.12, and 3.14.
 - Pinned workflow actions by commit, restricted repository permissions to

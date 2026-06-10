@@ -59,6 +59,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   inbound body before generating response text.
 - Message IDs are normalized and length-bounded before duplicate-send cache keys
   are built.
+- Valid messages reserve their normalized ID with atomic memcache `add` before
+  the Gmail send; concurrent workers stop before the side effect, while failed
+  sends release the reservation for retry.
 
 ## Testing and Verification
 
@@ -77,7 +80,8 @@ scripts/check-baseline.sh
 ```
 
 `make check` runs the baseline gate and offline unittest discovery. These tests
-use deterministic fixtures, assert duplicate-message cache behavior, verify
+use deterministic fixtures, assert atomic duplicate-message reservation and
+failed-send release behavior, verify
 automation recipient matching by address in the handler and core send decision,
 verify reply subject normalization, compile the rule module and tests through
 `make build`, cover bounded inbound body matching, and do not access Gmail or a
@@ -106,6 +110,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   generating response text.
 - Message IDs are normalized and length-bounded before memcache duplicate-send
   keys are used.
+- Duplicate-message IDs are reserved atomically before outbound sends. A failed
+  or raised send releases its reservation so a later retry can proceed.
 - `APP_DEBUG` defaults off; set `APP_DEBUG=1` only for local debugging.
 
 ## Security and Privacy Notes
@@ -142,6 +148,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   cache-key validation before duplicate-send checks.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the hosted GitHub Actions
   baseline.
+- See `docs/plans/2026-06-10-atomic-message-deduplication.md` for pre-send
+  message reservation and failed-send release behavior.
 
 ## Contributing
 

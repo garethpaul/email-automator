@@ -48,6 +48,9 @@ Current baseline:
 - Rule matching is limited to the first 10000 characters of an inbound body.
 - Message IDs are normalized and length-bounded before duplicate-send cache keys
   are built.
+- Valid message IDs are atomically reserved before outbound sends, preventing
+  concurrent workers from sending the same automated reply; failed sends
+  release their reservation for retry.
 - GitHub Actions runs the offline `make check` baseline on Python 3.10, 3.12,
   and 3.14 for pushes, pull requests, and manual dispatches.
 

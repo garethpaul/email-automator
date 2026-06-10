@@ -198,6 +198,80 @@ class RuleTests(unittest.TestCase):
         self.assertEqual("approveduser@approveduser.com", sent[0][1])
         self.assertEqual("Re: Coffee", sent[0][2])
 
+    def test_valid_email_reserves_message_before_sending(self):
+        sent = []
+        nested_results = []
+        original_send = rules.sendEmail
+        msg = {
+            "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "message-id",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+
+        def send_with_concurrent_attempt(*args):
+            sent.append(args)
+            if len(sent) == 1:
+                nested_results.append(rules.valid_email(msg, "user-id"))
+            return True
+
+        rules.sendEmail = send_with_concurrent_attempt
+        try:
+            self.assertTrue(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual([False], nested_results)
+        self.assertEqual(1, len(sent))
+
+    def test_valid_email_releases_reservation_after_failed_send(self):
+        attempts = []
+        original_send = rules.sendEmail
+        msg = {
+            "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "message-id",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+
+        def fail_once(*args):
+            attempts.append(args)
+            return len(attempts) > 1
+
+        rules.sendEmail = fail_once
+        try:
+            self.assertFalse(rules.valid_email(msg, "user-id"))
+            self.assertTrue(rules.cache_check("message-id"))
+            self.assertTrue(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual(2, len(attempts))
+
+    def test_valid_email_releases_reservation_after_send_exception(self):
+        original_send = rules.sendEmail
+        msg = {
+            "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "message-id",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+
+        def raise_send_error(*args):
+            raise RuntimeError("send failed")
+
+        rules.sendEmail = raise_send_error
+        try:
+            with self.assertRaises(RuntimeError):
+                rules.valid_email(msg, "user-id")
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertTrue(rules.cache_check("message-id"))
+
     def test_valid_email_sanitizes_reply_subject(self):
         sent = []
         original_send = rules.sendEmail

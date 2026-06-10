@@ -17,6 +17,9 @@ except ImportError:
             self._store[key] = value
             return True
 
+        def delete(self, key):
+            return self._store.pop(key, None) is not None
+
         def clear(self):
             self._store.clear()
 
@@ -155,6 +158,19 @@ def cache_check(msgId):
     else:
         return True
 
+def reserve_message_id(msgId):
+    key = cache_key(msgId)
+    if not key:
+        return False
+    if memcache is None:
+        return True
+    return bool(memcache.add(key, msgId))
+
+def release_message_id(msgId):
+    key = cache_key(msgId)
+    if key and memcache is not None:
+        memcache.delete(key)
+
 def approved_sender(msg):
     allowed = set(normalize_email_address(email) for email in from_users)
     for name, address in msg.get('from', []):
@@ -169,12 +185,15 @@ def valid_email(msg, user_id):
     if not message_addressed_to_automation(msg):
         return False
     msgId = normalize_message_id(msg.get('msgId'))
-    if msgId and cache_check(msgId):
-        sent = sendEmail(user_id, sender, reply_subject(msg.get('subject', "")), parse_email(msg.get('payload', "")))
+    if msgId and reserve_message_id(msgId):
+        try:
+            sent = sendEmail(user_id, sender, reply_subject(msg.get('subject', "")), parse_email(msg.get('payload', "")))
+        except Exception:
+            release_message_id(msgId)
+            raise
         if not sent:
+            release_message_id(msgId)
             return False
-        if memcache is not None:
-            memcache.add(cache_key(msgId), msgId)
         return True
     return False
 

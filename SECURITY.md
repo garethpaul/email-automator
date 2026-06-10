@@ -56,6 +56,10 @@ inbound body so unusually large messages do not drive unbounded local parsing.
 Message IDs are normalized and length-bounded before duplicate-send cache keys
 are used.
 
+Normalized message IDs are atomically reserved in memcache before an automated
+reply is sent. Concurrent processing of the same ID must stop before the Gmail
+side effect, and failed sends must release their reservation for retry.
+
 ## Dependency and Supply Chain Security
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
