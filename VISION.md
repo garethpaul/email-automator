@@ -40,6 +40,8 @@ Current baseline:
   display names.
 - Configured sender and recipient email addresses are validated before rule
   checks use them.
+- Approved senders are loaded from validated environment configuration at
+  authorization time rather than cached when the module imports.
 - Inbound malformed sender metadata is rejected before message reservation or
   delivery.
 - Outbound automation From addresses are validated before generated Gmail

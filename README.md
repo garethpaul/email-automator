@@ -107,6 +107,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   `AUTOMATION_APPROVED_SENDERS` are deployment/local configuration values.
 - Configured sender and recipient email addresses are validated before reply
   rules use them; malformed values are ignored instead of triggering replies.
+- `AUTOMATION_APPROVED_SENDERS` is read at authorization time so allow-list
+  rotations apply without waiting for an App Engine process restart.
 - The authorization path ignores malformed sender metadata and fails closed
   before reserving a message ID or sending a reply.
 - Outbound `AUTOMATION_FROM_EMAIL` is validated before `CreateMessage` is
@@ -159,6 +161,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   message reservation and failed-send release behavior.
 - See `docs/plans/2026-06-12-gmail-message-id-fetch-cache.md` for the Gmail
   message-versus-thread identity boundary.
+- See `docs/plans/2026-06-12-approved-sender-config-refresh.md` for the
+  authorization-time approved-sender configuration lifecycle.
 
 ## Contributing
 

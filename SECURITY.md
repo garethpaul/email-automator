@@ -46,6 +46,8 @@ text.
 
 Configured automation email addresses should be validated before matching
 senders or recipients so malformed environment values cannot trigger replies.
+The approved-sender allow-list is read at authorization time so removing an
+address does not depend on recycling the current process.
 
 Inbound malformed sender metadata should fail closed before duplicate-message
 reservation or outbound delivery.

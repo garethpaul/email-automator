@@ -13,6 +13,7 @@ CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 ATOMIC_DEDUP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-message-deduplication.md"
 MALFORMED_SENDER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md"
 GMAIL_MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gmail-message-id-fetch-cache.md"
+SENDER_REFRESH_PLAN="$ROOT_DIR/docs/plans/2026-06-12-approved-sender-config-refresh.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 
 cleanup_bytecode() {
@@ -54,6 +55,7 @@ for path in \
   "docs/plans/2026-06-10-atomic-message-deduplication.md" \
   "docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md" \
   "docs/plans/2026-06-12-gmail-message-id-fetch-cache.md" \
+  "docs/plans/2026-06-12-approved-sender-config-refresh.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
@@ -62,6 +64,33 @@ for path in \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
+done
+
+for sender_refresh_contract in \
+  "allowed = set(configured_from_users())" \
+  "test_approved_sender_uses_current_environment_allowlist"; do
+  if ! grep -Fq "$sender_refresh_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Approved-sender refresh contract is missing: $sender_refresh_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq "from_users = configured_from_users()" "$ROOT_DIR/mail/rules.py"; then
+  printf '%s\n' "Approved senders must not be cached at module import time." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$SENDER_REFRESH_PLAN" ||
+  ! grep -Fq "34 offline tests" "$SENDER_REFRESH_PLAN"; then
+  printf '%s\n' "Approved-sender refresh plan must remain completed and verified." >&2
+  exit 1
+fi
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "authorization time" "$document"; then
+    printf '%s\n' "$document must document approved-sender refresh at authorization time." >&2
+    exit 1
+  fi
 done
 
 for gmail_message_contract in \

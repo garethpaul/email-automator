@@ -15,16 +15,13 @@ class RuleTests(unittest.TestCase):
             "AUTOMATION_TO_EMAIL": os.environ.get("AUTOMATION_TO_EMAIL"),
             "AUTOMATION_FROM_EMAIL": os.environ.get("AUTOMATION_FROM_EMAIL"),
         }
-        self._original_from_users = rules.from_users
         os.environ["AUTOMATION_APPROVED_SENDERS"] = "approveduser@approveduser.com"
         os.environ["AUTOMATION_TO_EMAIL"] = "myemail@myemail.com"
         os.environ["AUTOMATION_FROM_EMAIL"] = "youremail@youremail.com"
-        rules.from_users = rules.configured_from_users()
         if hasattr(rules.memcache, "clear"):
             rules.memcache.clear()
 
     def tearDown(self):
-        rules.from_users = self._original_from_users
         for name, value in self._original_env.items():
             if value is None:
                 os.environ.pop(name, None)
@@ -72,6 +69,20 @@ class RuleTests(unittest.TestCase):
         msg = {"from": [("Allowed", "ApprovedUser@ApprovedUser.com")]}
 
         self.assertEqual("ApprovedUser@ApprovedUser.com", rules.approved_sender(msg))
+
+    def test_approved_sender_uses_current_environment_allowlist(self):
+        old_sender = {"from": [("Old", "approveduser@approveduser.com")]}
+        new_sender = {"from": [("New", "new@example.com")]}
+
+        self.assertEqual(
+            "approveduser@approveduser.com",
+            rules.approved_sender(old_sender),
+        )
+
+        os.environ["AUTOMATION_APPROVED_SENDERS"] = "new@example.com"
+
+        self.assertIsNone(rules.approved_sender(old_sender))
+        self.assertEqual("new@example.com", rules.approved_sender(new_sender))
 
     def test_approved_sender_rejects_unknown_address(self):
         msg = {"from": [("Unknown", "stranger@example.com")]}
