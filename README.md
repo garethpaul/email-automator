@@ -13,7 +13,7 @@ default repository verification path only exercises offline rule behavior.
 ## Repository Contents
 
 - `README.md` - project overview and local usage notes
-- `requirements.txt` - legacy Python dependency pins
+- `requirements.txt` - exact patched legacy Python 2 runtime pins
 - `app.yaml` and `cron.yaml` - App Engine routing and scheduled check config
 - `database/` - App Engine credential model helpers
 - `Makefile` - repository-level verification wrapper
@@ -28,19 +28,24 @@ default repository verification path only exercises offline rule behavior.
 
 - Git
 - Google App Engine Python 2 SDK for the deployed prototype
-- Python 3 for the offline rule tests
+- Python 3.10, 3.12, or 3.14 for the offline rule tests
 
 ### Setup
 
 ```bash
 git clone https://github.com/garethpaul/email-automator.git
 cd email-automator
-python -m pip install -r requirements.txt
+make check
 ```
 
 Live Gmail/App Engine paths require local OAuth client configuration and App
 Engine credentials that must not be committed. The default local test path below
 does not access Gmail, OAuth, App Engine, or real mailbox data.
+
+`requirements.txt` belongs only to the legacy Python 2/App Engine runtime. Do
+not install it into the modern offline-test environment. It pins patched WebOb
+1.8.10 and excludes virtualenv because environment creation is tooling, not an
+application dependency, and patched virtualenv releases require modern Python.
 
 The setup commands above are derived from repository files. Legacy mobile, Python, or JavaScript samples may require older SDKs or package versions than a modern workstation uses by default.
 
@@ -93,7 +98,10 @@ real inbox.
 GitHub Actions runs the same offline `make check` baseline on Python 3.10,
 3.12, and 3.14 for pushes, pull requests, and manual dispatches. The workflow
 pins its actions by commit, grants read-only repository access, and does not
-install the obsolete App Engine deployment requirements.
+install the obsolete App Engine deployment requirements. A separate Python
+3.12 job audits the exact legacy pins with dependency resolution disabled, so
+the audit does not claim the Python 2 application stack runs on the hosted
+Python 3 worker.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -163,6 +171,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   message-versus-thread identity boundary.
 - See `docs/plans/2026-06-12-approved-sender-config-refresh.md` for the
   authorization-time approved-sender configuration lifecycle.
+- See `docs/plans/2026-06-12-patched-legacy-runtime-requirements.md` for the
+  patched WebOb, removed virtualenv, and hosted dependency-audit boundary.
 
 ## Contributing
 

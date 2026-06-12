@@ -15,6 +15,12 @@
   allow-list additions and removals apply without a process restart.
 - Added a rotation regression and a static guard against restoring an
   import-time sender snapshot.
+- Raised WebOb to the Python 2-compatible 1.8.10 security floor and removed
+  unused virtualenv tooling from the application requirements.
+- Added a pinned, credential-free dependency-audit job that checks the explicit
+  legacy pins without installing or resolving the Python 2 runtime on Python 3.
+- Fixed both hosted checkouts to disable persisted credentials and use the
+  fixed Ubuntu 24.04 runner.
 
 ## 2026-06-10
 

@@ -14,7 +14,9 @@ ATOMIC_DEDUP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-message-deduplication.
 MALFORMED_SENDER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md"
 GMAIL_MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gmail-message-id-fetch-cache.md"
 SENDER_REFRESH_PLAN="$ROOT_DIR/docs/plans/2026-06-12-approved-sender-config-refresh.md"
+DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
+REQUIREMENTS="$ROOT_DIR/requirements.txt"
 
 cleanup_bytecode() {
   find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -35,6 +37,7 @@ require_file() {
 for path in \
   "README.md" \
   "SECURITY.md" \
+  "requirements.txt" \
   "Makefile" \
   "VISION.md" \
   "CHANGES.md" \
@@ -56,6 +59,7 @@ for path in \
   "docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md" \
   "docs/plans/2026-06-12-gmail-message-id-fetch-cache.md" \
   "docs/plans/2026-06-12-approved-sender-config-refresh.md" \
+  "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
@@ -65,6 +69,20 @@ for path in \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
 done
+
+EXPECTED_REQUIREMENTS='webob==1.8.10
+webapp2==2.5.2
+uritemplate==0.6
+webtest==2.0.21'
+if [ "$(cat "$REQUIREMENTS")" != "$EXPECTED_REQUIREMENTS" ]; then
+  printf '%s\n' "requirements.txt must keep the exact patched legacy runtime boundary." >&2
+  exit 1
+fi
+
+if grep -Eiq '(^|[[:space:]])virtualenv([<=>[:space:]]|$)' "$REQUIREMENTS"; then
+  printf '%s\n' "requirements.txt must not restore unused virtualenv tooling." >&2
+  exit 1
+fi
 
 for sender_refresh_contract in \
   "allowed = set(configured_from_users())" \
@@ -81,7 +99,8 @@ if grep -Fq "from_users = configured_from_users()" "$ROOT_DIR/mail/rules.py"; th
 fi
 
 if ! grep -Fq "status: completed" "$SENDER_REFRESH_PLAN" ||
-  ! grep -Fq "34 offline tests" "$SENDER_REFRESH_PLAN"; then
+  ! grep -Fq 'Local Python 3.12.8 and 3.14.0: `make check` passed all 34 offline tests and' "$SENDER_REFRESH_PLAN" ||
+  ! grep -Fq "Five isolated hostile mutations were rejected" "$SENDER_REFRESH_PLAN"; then
   printf '%s\n' "Approved-sender refresh plan must remain completed and verified." >&2
   exit 1
 fi
@@ -92,6 +111,31 @@ for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.
     exit 1
   fi
 done
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "WebOb" "$document" || ! grep -Fq "virtualenv" "$document"; then
+    printf '%s\n' "$document must document patched WebOb and removed virtualenv tooling." >&2
+    exit 1
+  fi
+done
+
+if [ "$(grep -Fci 'status: completed' "$DEPENDENCY_PLAN")" -ne 1 ] ||
+  ! grep -Fq "## Work Completed" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "## Verification Results" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "no known" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "34 offline tests" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "330cab60f6c2cf4dca878519563ec8517d37e1d2" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "27430550372" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "27430552862" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "27430550455" "$DEPENDENCY_PLAN"; then
+  printf '%s\n' "Patched legacy requirements plan must remain completed and verified." >&2
+  exit 1
+fi
+
+if grep -Eiq '\b(planned|pending|todo|tbd)\b' "$DEPENDENCY_PLAN"; then
+  printf '%s\n' "Patched legacy requirements plan must not retain unfinished markers." >&2
+  exit 1
+fi
 
 for gmail_message_contract in \
   "def gmail_message_id" \
@@ -198,7 +242,13 @@ if ! grep -Fq "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" "$CI_W
   ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ${{ matrix.python-version }}' "$CI_WORKFLOW" ||
+  ! grep -Fq 'python-version: "3.12"' "$CI_WORKFLOW" ||
   ! grep -Fq "run: make check" "$CI_WORKFLOW" ||
+  ! grep -Fq "dependency-audit:" "$CI_WORKFLOW" ||
+  ! grep -Fq "python -m pip install pip-audit==2.10.0" "$CI_WORKFLOW" ||
+  ! grep -Fq "pip-audit --disable-pip --no-deps -r requirements.txt" "$CI_WORKFLOW" ||
+  [ "$(grep -Fc 'persist-credentials: false' "$CI_WORKFLOW")" -ne 2 ] ||
+  [ "$(grep -Fc 'runs-on: ubuntu-24.04' "$CI_WORKFLOW")" -ne 2 ] ||
   ! grep -Fq "permissions:" "$CI_WORKFLOW" ||
   ! grep -Fq "contents: read" "$CI_WORKFLOW" ||
   ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
