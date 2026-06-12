@@ -48,12 +48,12 @@ hard to reason about.
 
 ## Verification
 
-- `make check` passes with 34 offline tests and Python 3 compilation.
-- The 34-test suite and compile gate pass on Python 3.10.20, 3.12.8, and
-  3.14.6, matching the hosted matrix.
+- Local Python 3.12.8 and 3.14.0: `make check` passed all 34 offline tests and
+  bytecode compilation.
 - `git diff --check` passes.
-- Restoring the import-time `from_users` snapshot fails the rotation regression
-  and the static baseline.
+- Five isolated hostile mutations were rejected: restoring the import-time
+  snapshot, reading the stale global, removing the rotation regression,
+  marking this plan incomplete, and replacing this completed evidence.
 
 ## Work Completed
 

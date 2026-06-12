@@ -81,7 +81,8 @@ if grep -Fq "from_users = configured_from_users()" "$ROOT_DIR/mail/rules.py"; th
 fi
 
 if ! grep -Fq "status: completed" "$SENDER_REFRESH_PLAN" ||
-  ! grep -Fq "34 offline tests" "$SENDER_REFRESH_PLAN"; then
+  ! grep -Fq 'Local Python 3.12.8 and 3.14.0: `make check` passed all 34 offline tests and' "$SENDER_REFRESH_PLAN" ||
+  ! grep -Fq "Five isolated hostile mutations were rejected" "$SENDER_REFRESH_PLAN"; then
   printf '%s\n' "Approved-sender refresh plan must remain completed and verified." >&2
   exit 1
 fi
