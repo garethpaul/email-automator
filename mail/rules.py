@@ -98,6 +98,10 @@ MESSAGE_ID_RE = re.compile(r"^[A-Za-z0-9._:-]+\Z")
 MAX_EMAIL_BODY_LENGTH = 10000
 MAX_REPLY_SUBJECT_LENGTH = 200
 MAX_MESSAGE_ID_LENGTH = 128
+try:
+    STRING_TYPES = (basestring,)
+except NameError:
+    STRING_TYPES = (str,)
 
 def bounded_email_body(txt):
     return (txt or "")[:MAX_EMAIL_BODY_LENGTH]
@@ -139,6 +143,14 @@ def normalize_message_id(msgId):
     if not MESSAGE_ID_RE.match(msgId):
         return ""
     return msgId
+
+def gmail_message_id(summary):
+    if not isinstance(summary, dict):
+        return ""
+    msgId = summary.get('id')
+    if not isinstance(msgId, STRING_TYPES):
+        return ""
+    return normalize_message_id(msgId)
 
 def cache_key(msgId):
     msgId = normalize_message_id(msgId)

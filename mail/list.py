@@ -68,14 +68,18 @@ def ListMessagesWithLabels(service, user_id, label_ids=[]):
     if 'messages' in response:
         msgs = response['messages']
         for msg in msgs[:30]:
-            threadId = msg['threadId']
-            _cache = memcache.get("threadId_" + threadId)
+            message_id = rules.gmail_message_id(msg)
+            if not message_id:
+                continue
+            cache_key = "messageId_" + message_id
+            _cache = memcache.get(cache_key)
             if _cache is not None:
                 messages.append(_cache)
             else:
-                mail_msg = GetMimeMessage(service, user_id, threadId)
-                memcache.add("threadId_" + threadId, mail_msg)
-                messages.append(mail_msg)
+                mail_msg = GetMimeMessage(service, user_id, message_id)
+                if mail_msg is not None:
+                    memcache.add(cache_key, mail_msg)
+                    messages.append(mail_msg)
     return messages
   except errors.HttpError, error:
     print 'An error occurred: %s' % error

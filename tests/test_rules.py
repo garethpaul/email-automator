@@ -215,6 +215,25 @@ class RuleTests(unittest.TestCase):
         self.assertIsNone(rules.cache_key("message-id\r\nother"))
         self.assertIsNone(rules.cache_key("x" * (rules.MAX_MESSAGE_ID_LENGTH + 1)))
 
+    def test_gmail_message_id_uses_message_id_not_thread_id(self):
+        summary = {"id": " message-123 ", "threadId": "thread-456"}
+
+        self.assertEqual("message-123", rules.gmail_message_id(summary))
+
+    def test_gmail_message_id_rejects_malformed_summaries(self):
+        malformed = [
+            None,
+            [],
+            {"threadId": "thread-only"},
+            {"id": 123},
+            {"id": "message-id\r\nother"},
+            {"id": "x" * (rules.MAX_MESSAGE_ID_LENGTH + 1)},
+        ]
+
+        for summary in malformed:
+            with self.subTest(summary=summary):
+                self.assertEqual("", rules.gmail_message_id(summary))
+
     def test_valid_email_sends_approved_message_once(self):
         sent = []
         original_send = rules.sendEmail

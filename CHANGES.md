@@ -2,6 +2,11 @@
 
 ## 2026-06-12
 
+- Switched Gmail MIME retrieval and parsed-message caching from thread IDs to
+  validated Gmail message IDs so later messages cannot reuse stale thread
+  content.
+- Added offline malformed-summary tests and static contracts that reject
+  thread-ID fetch/cache regressions.
 - Hardened approved-sender extraction so malformed sender metadata is ignored
   instead of raising in the automated-send authorization path.
 - Added offline regressions proving malformed-only messages fail closed without

@@ -62,6 +62,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Valid messages reserve their normalized ID with atomic memcache `add` before
   the Gmail send; concurrent workers stop before the side effect, while failed
   sends release the reservation for retry.
+- Gmail list summaries are fetched and cached by validated message `id`, not
+  `threadId`, so later messages in an existing thread cannot reuse stale MIME
+  content.
 
 ## Testing and Verification
 
@@ -114,6 +117,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   keys are used.
 - Duplicate-message IDs are reserved atomically before outbound sends. A failed
   or raised send releases its reservation so a later retry can proceed.
+- Gmail message IDs, rather than thread IDs, identify MIME fetches and parsed
+  message cache entries; malformed summaries are skipped before either action.
 - `APP_DEBUG` defaults off; set `APP_DEBUG=1` only for local debugging.
 
 ## Security and Privacy Notes
@@ -152,6 +157,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   baseline.
 - See `docs/plans/2026-06-10-atomic-message-deduplication.md` for pre-send
   message reservation and failed-send release behavior.
+- See `docs/plans/2026-06-12-gmail-message-id-fetch-cache.md` for the Gmail
+  message-versus-thread identity boundary.
 
 ## Contributing
 

@@ -53,6 +53,8 @@ Current baseline:
 - Valid message IDs are atomically reserved before outbound sends, preventing
   concurrent workers from sending the same automated reply; failed sends
   release their reservation for retry.
+- Gmail message IDs identify MIME fetches and cache entries; thread IDs are not
+  reused as message identity, and malformed summaries are skipped.
 - GitHub Actions runs the offline `make check` baseline on Python 3.10, 3.12,
   and 3.14 for pushes, pull requests, and manual dispatches.
 

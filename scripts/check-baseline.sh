@@ -12,6 +12,7 @@ MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-message-id-cache-guard.md
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 ATOMIC_DEDUP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-message-deduplication.md"
 MALFORMED_SENDER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md"
+GMAIL_MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gmail-message-id-fetch-cache.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 
 cleanup_bytecode() {
@@ -52,6 +53,7 @@ for path in \
   "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-10-atomic-message-deduplication.md" \
   "docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md" \
+  "docs/plans/2026-06-12-gmail-message-id-fetch-cache.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
@@ -60,6 +62,32 @@ for path in \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
+done
+
+for gmail_message_contract in \
+  "def gmail_message_id" \
+  "message_id = rules.gmail_message_id(msg)" \
+  'cache_key = "messageId_" + message_id' \
+  "GetMimeMessage(service, user_id, message_id)" \
+  "test_gmail_message_id_uses_message_id_not_thread_id" \
+  "test_gmail_message_id_rejects_malformed_summaries"; do
+  if ! grep -Fq "$gmail_message_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Gmail message-ID fetch/cache contract is missing: $gmail_message_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq 'GetMimeMessage(service, user_id, threadId)' "$ROOT_DIR/mail/list.py" ||
+  grep -Fq 'memcache.get("threadId_"' "$ROOT_DIR/mail/list.py"; then
+  printf '%s\n' "Gmail MIME retrieval and caching must not use threadId as message identity." >&2
+  exit 1
+fi
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "Gmail message IDs" "$document"; then
+    printf '%s\n' "$document must document message-ID keyed Gmail fetches and caching." >&2
+    exit 1
+  fi
 done
 
 for sender_contract in \
@@ -128,6 +156,12 @@ fi
 if ! grep -Fq "Status: Completed" "$ATOMIC_DEDUP_PLAN" ||
   ! grep -Fq "make check" "$ATOMIC_DEDUP_PLAN"; then
   printf '%s\n' "Atomic message deduplication plan must remain completed with verification recorded." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$GMAIL_MESSAGE_ID_PLAN" ||
+  ! grep -Fq "make check" "$GMAIL_MESSAGE_ID_PLAN"; then
+  printf '%s\n' "Gmail message-ID fetch/cache plan must remain completed with verification recorded." >&2
   exit 1
 fi
 
