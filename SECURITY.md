@@ -32,7 +32,10 @@ Helpful reports include:
 - Review found file, document, data, or media parsing flows; changes in those areas should receive security-focused review before merge.
 - Review found database, model, query, or persistence-related code; changes in those areas should receive security-focused review before merge.
 - Review found secret-like configuration names that require careful review before use; changes in those areas should receive security-focused review before merge.
-- Dependency manifests detected: requirements.txt. Dependency updates should preserve lockfiles when present and avoid introducing packages without a clear maintenance reason.
+- `requirements.txt` is an exact legacy Python 2/App Engine runtime boundary.
+  Keep WebOb at 1.8.10 or newer within Python 2 compatibility, do not restore
+  virtualenv as an application dependency, and avoid adding packages without a
+  demonstrated deployed import.
 - GitHub Actions runs the offline `make check` matrix on Python 3.10, 3.12, and
   3.14 with pinned actions, read-only repository access, and bounded jobs.
 
@@ -72,6 +75,11 @@ access so stale thread content cannot replace a later message.
 ## Dependency and Supply Chain Security
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
+
+Hosted dependency auditing checks the explicit legacy pins without resolving or
+installing them on Python 3. This verifies known advisory status while keeping
+the separate Python 2/App Engine runtime limitation explicit. The modern
+offline rule matrix must remain dependency-free.
 
 ## Safe Research Guidelines
 

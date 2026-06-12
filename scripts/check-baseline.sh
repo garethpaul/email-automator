@@ -112,6 +112,31 @@ for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.
   fi
 done
 
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "WebOb" "$document" || ! grep -Fq "virtualenv" "$document"; then
+    printf '%s\n' "$document must document patched WebOb and removed virtualenv tooling." >&2
+    exit 1
+  fi
+done
+
+if [ "$(grep -Fci 'status: completed' "$DEPENDENCY_PLAN")" -ne 1 ] ||
+  ! grep -Fq "## Work Completed" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "## Verification Results" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "no known" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "34 offline tests" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "330cab60f6c2cf4dca878519563ec8517d37e1d2" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "27430550372" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "27430552862" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "27430550455" "$DEPENDENCY_PLAN"; then
+  printf '%s\n' "Patched legacy requirements plan must remain completed and verified." >&2
+  exit 1
+fi
+
+if grep -Eiq '\b(planned|pending|todo|tbd)\b' "$DEPENDENCY_PLAN"; then
+  printf '%s\n' "Patched legacy requirements plan must not retain unfinished markers." >&2
+  exit 1
+fi
+
 for gmail_message_contract in \
   "def gmail_message_id" \
   "message_id = rules.gmail_message_id(msg)" \

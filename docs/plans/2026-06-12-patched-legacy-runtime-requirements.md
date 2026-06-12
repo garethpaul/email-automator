@@ -1,6 +1,6 @@
 # Patched Legacy Runtime Requirements
 
-status: planned
+status: completed
 
 ## Context
 
@@ -63,3 +63,30 @@ an App Engine, webapp2, OAuth, Gmail API, or Python runtime migration.
   and incomplete plan mutations are rejected
 - `git diff --check`
 - successful exact-head push, pull-request, dependency-audit, and CodeQL runs
+
+## Work Completed
+
+- Raised WebOb from 1.6.1 to the Python 2.7-compatible 1.8.10 security floor.
+- Removed virtualenv 15.0.2 because environment creation is not a deployed
+  application dependency and patched virtualenv releases require modern
+  Python.
+- Preserved exact webapp2, uritemplate, and WebTest pins and kept the modern
+  offline rule-test matrix free of the legacy App Engine dependency graph.
+- Added a separate Python 3.12 `pip-audit` job with dependency resolution
+  disabled, fixed both checkouts to avoid persisted credentials, and selected
+  the fixed Ubuntu 24.04 runner.
+- Updated repository contracts and maintenance, security, vision, contributor,
+  and setup guidance for the explicit legacy runtime boundary.
+
+## Verification Results
+
+- `make lint`, `make test`, `make build`, and `make check` passed locally with
+  all 34 offline tests.
+- `pip-audit --disable-pip --no-deps -r requirements.txt` reported no known
+  vulnerabilities without installing or resolving the Python 2 stack.
+- Workflow YAML parsed with the three-version rule matrix and separate
+  dependency-audit job.
+- Canonical push run `27430550372` and pull-request run `27430552862` passed
+  Python 3.10, 3.12, and 3.14 checks plus dependency audit at implementation
+  head `330cab60f6c2cf4dca878519563ec8517d37e1d2`.
+- CodeQL run `27430550455` passed Actions and Python analysis at the same head.

@@ -59,11 +59,16 @@ Current baseline:
   reused as message identity, and malformed summaries are skipped.
 - GitHub Actions runs the offline `make check` baseline on Python 3.10, 3.12,
   and 3.14 for pushes, pull requests, and manual dispatches.
+- The exact legacy runtime manifest keeps patched WebOb and excludes unused
+  virtualenv tooling.
+- A separate hosted dependency audit checks the explicit pins without
+  installing or claiming Python 3 compatibility for the Python 2 stack.
 
 Next priorities:
 
 - Document credential files, scopes, and safe local setup
-- Modernize App Engine and Google API dependencies in a dedicated pass
+- Migrate App Engine, Python 2, webapp2, OAuth, and Google API dependencies in
+  one dedicated compatibility pass
 - Add tests around email stripping, rule matching, and reply generation
 - Make opt-in and failure behavior clear before any real mailbox use
 
