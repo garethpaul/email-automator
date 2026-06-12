@@ -11,6 +11,10 @@
   instead of raising in the automated-send authorization path.
 - Added offline regressions proving malformed-only messages fail closed without
   reserving their message ID or invoking delivery.
+- Read validated approved-sender configuration at authorization time so
+  allow-list additions and removals apply without a process restart.
+- Added a rotation regression and a static guard against restoring an
+  import-time sender snapshot.
 
 ## 2026-06-10
 

@@ -72,8 +72,6 @@ def message_addressed_to_automation(msg, target_email=None):
             return True
     return False
 
-from_users = configured_from_users()
-
 buzz_map = [
     {"keyword": "gareth", "response": "Looks like you were emailing regarding Gareth. He loves coffee, you should consider buying him one"}
 ]
@@ -184,7 +182,7 @@ def release_message_id(msgId):
         memcache.delete(key)
 
 def approved_sender(msg):
-    allowed = set(normalize_email_address(email) for email in from_users)
+    allowed = set(configured_from_users())
     senders = msg.get('from') or []
     if not isinstance(senders, (list, tuple)):
         return None
