@@ -40,6 +40,8 @@ Current baseline:
   display names.
 - Configured sender and recipient email addresses are validated before rule
   checks use them.
+- Inbound malformed sender metadata is rejected before message reservation or
+  delivery.
 - Outbound automation From addresses are validated before generated Gmail
   messages are created.
 - The core `valid_email` send decision also requires the message to be

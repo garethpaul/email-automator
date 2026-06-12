@@ -11,6 +11,7 @@ BODY_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-rule-body-length-limit.md
 MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-message-id-cache-guard.md"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 ATOMIC_DEDUP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-message-deduplication.md"
+MALFORMED_SENDER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 
 cleanup_bytecode() {
@@ -50,6 +51,7 @@ for path in \
   "docs/plans/2026-06-09-email-message-id-cache-guard.md" \
   "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-10-atomic-message-deduplication.md" \
+  "docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
@@ -58,6 +60,34 @@ for path in \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
+done
+
+for sender_contract in \
+  "senders = msg.get('from') or []" \
+  "not isinstance(senders, (list, tuple))" \
+  "not isinstance(sender, (list, tuple))" \
+  "len(sender) != 2" \
+  "test_approved_sender_ignores_malformed_entries" \
+  "test_approved_sender_rejects_malformed_sender_collections" \
+  "test_approved_sender_accepts_valid_entry_after_malformed_entries" \
+  "test_valid_email_rejects_malformed_sender_metadata_without_side_effects"; do
+  if ! grep -Fq "$sender_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Malformed sender metadata contract is missing: $sender_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "Malformed Sender Metadata Guard" "$MALFORMED_SENDER_PLAN" ||
+  ! grep -Fq "make check" "$MALFORMED_SENDER_PLAN"; then
+  printf '%s\n' "Malformed sender metadata plan must document repository verification." >&2
+  exit 1
+fi
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "malformed sender metadata" "$document"; then
+    printf '%s\n' "$document must document malformed sender metadata rejection." >&2
+    exit 1
+  fi
 done
 
 python3 -m py_compile "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"

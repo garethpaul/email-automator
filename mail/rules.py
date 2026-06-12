@@ -173,8 +173,18 @@ def release_message_id(msgId):
 
 def approved_sender(msg):
     allowed = set(normalize_email_address(email) for email in from_users)
-    for name, address in msg.get('from', []):
-        if normalize_email_address(address) in allowed:
+    senders = msg.get('from') or []
+    if not isinstance(senders, (list, tuple)):
+        return None
+    for sender in senders:
+        if not isinstance(sender, (list, tuple)) or len(sender) != 2:
+            continue
+        address = sender[1]
+        try:
+            normalized_address = normalize_email_address(address)
+        except AttributeError:
+            continue
+        if normalized_address in allowed:
             return address
     return None
 

@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-12
+
+- Hardened approved-sender extraction so malformed sender metadata is ignored
+  instead of raising in the automated-send authorization path.
+- Added offline regressions proving malformed-only messages fail closed without
+  reserving their message ID or invoking delivery.
+
 ## 2026-06-10
 
 - Reserved normalized message IDs atomically before outbound Gmail sends so

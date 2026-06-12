@@ -78,6 +78,44 @@ class RuleTests(unittest.TestCase):
 
         self.assertIsNone(rules.approved_sender(msg))
 
+    def test_approved_sender_ignores_malformed_entries(self):
+        msg = {
+            "from": [
+                None,
+                ("Only",),
+                ("Too", "Many", "Values"),
+                "not-an-address-pair",
+                ("Numeric", 42),
+            ]
+        }
+
+        self.assertIsNone(rules.approved_sender(msg))
+
+    def test_approved_sender_rejects_malformed_sender_collections(self):
+        malformed_collections = (
+            None,
+            42,
+            "not-an-address-list",
+            {"address": "approveduser@approveduser.com"},
+        )
+        for senders in malformed_collections:
+            with self.subTest(senders=senders):
+                self.assertIsNone(rules.approved_sender({"from": senders}))
+
+    def test_approved_sender_accepts_valid_entry_after_malformed_entries(self):
+        msg = {
+            "from": [
+                None,
+                ("Only",),
+                ("Allowed", "ApprovedUser@ApprovedUser.com"),
+            ]
+        }
+
+        self.assertEqual(
+            "ApprovedUser@ApprovedUser.com",
+            rules.approved_sender(msg),
+        )
+
     def test_configured_from_users_reads_environment(self):
         original_value = os.environ.get("AUTOMATION_APPROVED_SENDERS")
         os.environ["AUTOMATION_APPROVED_SENDERS"] = "first@example.com, second@example.com, "
@@ -307,6 +345,25 @@ class RuleTests(unittest.TestCase):
             rules.sendEmail = original_send
 
         self.assertEqual([], sent)
+
+    def test_valid_email_rejects_malformed_sender_metadata_without_side_effects(self):
+        sent = []
+        original_send = rules.sendEmail
+        rules.sendEmail = lambda *args: sent.append(args) or True
+        msg = {
+            "from": [None, ("Only",), "not-an-address-pair"],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "malformed-sender-message",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+        try:
+            self.assertFalse(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual([], sent)
+        self.assertTrue(rules.cache_check("malformed-sender-message"))
 
     def test_valid_email_rejects_invalid_from_email(self):
         os.environ["AUTOMATION_FROM_EMAIL"] = "robot@example.com\r\nBcc: attacker@example.com"

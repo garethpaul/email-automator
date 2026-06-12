@@ -104,6 +104,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   `AUTOMATION_APPROVED_SENDERS` are deployment/local configuration values.
 - Configured sender and recipient email addresses are validated before reply
   rules use them; malformed values are ignored instead of triggering replies.
+- The authorization path ignores malformed sender metadata and fails closed
+  before reserving a message ID or sending a reply.
 - Outbound `AUTOMATION_FROM_EMAIL` is validated before `CreateMessage` is
   called, and invalid From configuration prevents automated sends.
 - Automated reply rule matching scans only a bounded inbound body prefix before

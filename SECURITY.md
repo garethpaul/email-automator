@@ -47,6 +47,9 @@ text.
 Configured automation email addresses should be validated before matching
 senders or recipients so malformed environment values cannot trigger replies.
 
+Inbound malformed sender metadata should fail closed before duplicate-message
+reservation or outbound delivery.
+
 Outbound automation From addresses should be validated before creating Gmail
 messages so malformed environment values cannot reach generated headers.
 
