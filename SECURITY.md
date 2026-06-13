@@ -46,6 +46,9 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 Generated automated reply subjects should stay single-line and length-bounded
 before sending so mailbox header handling is not exposed to raw inbound subject
 text.
+Malformed non-string body and subject values normalize to empty text before
+rule matching or reply-subject generation, preventing decoded metadata shape
+errors from crashing the offline automation decision.
 
 Configured automation email addresses should be validated before matching
 senders or recipients so malformed environment values cannot trigger replies.

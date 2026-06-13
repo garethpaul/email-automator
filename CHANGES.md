@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Malformed non-string message bodies and subjects now normalize to empty text
+  so rule matching and reply-subject generation fail closed instead of raising.
 - Reject the current outbound automation address as an inbound approved sender
   to prevent self-generated reply loops before reservation or delivery.
 - Added normalized, authorization-time refresh and no-side-effect regressions.

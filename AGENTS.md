@@ -57,6 +57,7 @@
 - Malformed sender metadata must fail closed before a message ID is reserved or any automated reply is sent.
 - Outbound `AUTOMATION_FROM_EMAIL` is validated before `CreateMessage` is called, and invalid From configuration prevents automated sends.
 - Automated reply rule matching scans only a bounded inbound body prefix before generating response text.
+- Malformed non-string body and subject values must normalize to empty text before rule matching or reply-subject generation.
 - Normalize and bound Gmail message IDs before using them in memcache keys. Reserve each ID atomically before sending, and release the reservation when a send fails so a later retry can proceed.
 - Keep Gmail message IDs distinct from thread IDs: message IDs identify MIME fetches and parsed-message cache entries.
 - `APP_DEBUG` must remain off by default and should only be enabled explicitly for local debugging.
