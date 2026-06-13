@@ -117,6 +117,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   rules use them; malformed values are ignored instead of triggering replies.
 - `AUTOMATION_APPROVED_SENDERS` is read at authorization time so allow-list
   rotations apply without waiting for an App Engine process restart.
+- The current `AUTOMATION_FROM_EMAIL` is rejected as an inbound sender even if
+  accidentally approved, preventing self-generated reply loops before message
+  reservation or delivery.
 - The authorization path ignores malformed sender metadata and fails closed
   before reserving a message ID or sending a reply.
 - Outbound `AUTOMATION_FROM_EMAIL` is validated before `CreateMessage` is
@@ -173,6 +176,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   authorization-time approved-sender configuration lifecycle.
 - See `docs/plans/2026-06-12-patched-legacy-runtime-requirements.md` for the
   patched WebOb, removed virtualenv, and hosted dependency-audit boundary.
+- See `docs/plans/2026-06-13-email-self-reply-guard.md` for authorization-time
+  self-sender rejection.
 
 ## Contributing
 

@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-13
+
+- Reject the current outbound automation address as an inbound approved sender
+  to prevent self-generated reply loops before reservation or delivery.
+- Added normalized, authorization-time refresh and no-side-effect regressions.
+
 ## 2026-06-12
 
 - Switched Gmail MIME retrieval and parsed-message caching from thread IDs to
