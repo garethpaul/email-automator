@@ -49,6 +49,9 @@ text.
 Malformed non-string body and subject values normalize to empty text before
 rule matching or reply-subject generation, preventing decoded metadata shape
 errors from crashing the offline automation decision.
+Missing, unknown, and malformed MIME text charsets use UTF-8 replacement
+fallback before automated rules consume HTML or plain text; attachments remain
+outside automated rule input.
 
 Configured automation email addresses should be validated before matching
 senders or recipients so malformed environment values cannot trigger replies.

@@ -17,6 +17,7 @@ SENDER_REFRESH_PLAN="$ROOT_DIR/docs/plans/2026-06-12-approved-sender-config-refr
 SELF_REPLY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-self-reply-guard.md"
 TEXT_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-text-boundary.md"
 SENDER_CARDINALITY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-sender-cardinality.md"
+MIME_CHARSET_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-mime-charset-fallback.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -52,7 +53,9 @@ for path in \
   "mail/check.py" \
   "mail/list.py" \
   "mail/rules.py" \
+  "mail/text_payload.py" \
   "tests/test_rules.py" \
+  "tests/test_text_payload.py" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
   "docs/plans/2026-06-09-email-outbound-from-address-validation.md" \
@@ -65,6 +68,7 @@ for path in \
   "docs/plans/2026-06-13-email-self-reply-guard.md" \
   "docs/plans/2026-06-13-email-text-boundary.md" \
   "docs/plans/2026-06-13-email-sender-cardinality.md" \
+  "docs/plans/2026-06-13-email-mime-charset-fallback.md" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
@@ -74,6 +78,55 @@ for path in \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
+done
+
+for mime_decoder_contract in \
+  'TEXT_TYPE = unicode' \
+  'charset = part.get_content_charset() or "utf-8"' \
+  'payload.decode(charset, errors="replace")' \
+  'except (LookupError, TypeError):' \
+  'payload.decode("utf-8", errors="replace")' \
+  'decode_text_payload(html[0])' \
+  'decode_text_payload(text[0])'; do
+  if ! grep -Fq "$mime_decoder_contract" "$ROOT_DIR/mail/text_payload.py" "$ROOT_DIR/mail/list.py"; then
+    printf '%s\n' "MIME text decoding contract is missing: $mime_decoder_contract" >&2
+    exit 1
+  fi
+done
+
+for mime_test_contract in \
+  "test_uses_valid_declared_charset" \
+  "test_missing_charset_uses_utf8_replacement" \
+  "test_unknown_charset_uses_utf8_replacement" \
+  "test_malformed_declared_charset_bytes_are_replaced" \
+  "test_string_payload_is_preserved" \
+  "test_absent_payload_becomes_empty_text"; do
+  if ! grep -Fq "$mime_test_contract" "$ROOT_DIR/tests/test_text_payload.py"; then
+    printf '%s\n' "MIME decoder test contract is missing: $mime_test_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "malformed MIME text charsets" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "malformed MIME text charsets" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "MIME text decoding fails closed" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "Normalized missing, unknown, and malformed MIME charsets" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "unknown MIME text charsets" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "MIME charset fallback documentation must remain synchronized." >&2
+  exit 1
+fi
+
+for mime_plan_contract in \
+  "status: completed" \
+  "## Status: Completed" \
+  "6 focused tests" \
+  "make verify" \
+  "isolated hostile mutations were rejected" \
+  "No live Gmail or App Engine execution is claimed"; do
+  if ! grep -Fq "$mime_plan_contract" "$MIME_CHARSET_PLAN"; then
+    printf '%s\n' "MIME charset plan must record completed verification: $mime_plan_contract" >&2
+    exit 1
+  fi
 done
 
 for sender_cardinality_contract in \

@@ -2,6 +2,7 @@
 import webapp2, jinja2, os, json, logging, base64,re, email, sys, logging
 # Import Local Libs
 import auth, rules
+from text_payload import decode_text_payload
 from database import default
 
 # Get Libs from Sys
@@ -213,11 +214,11 @@ def GetMimeMessage(service, user_id, msg_id):
         elif part.get_content_type() == "text/html":
             html.append(part)
     if html:
-        soup = BeautifulSoup(html[0].get_payload(decode=True).decode(html[0].get_content_charset()))
+        soup = BeautifulSoup(decode_text_payload(html[0]))
         texts = soup.findAll(text=True)
         data["payload"] = "".join(texts)
     elif text:
-        data["payload"] = text[0].get_payload(decode=True).decode(text[0].get_content_charset())
+        data["payload"] = decode_text_payload(text[0])
     else:
         raise Exception('No suitable part found')
     return data
