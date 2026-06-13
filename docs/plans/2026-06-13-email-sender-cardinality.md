@@ -2,7 +2,7 @@
 title: Email Sender Identity Cardinality
 type: security
 date: 2026-06-13
-status: planned
+status: completed
 execution: code
 ---
 
@@ -48,3 +48,20 @@ must fail closed instead of allowing the first allowlisted address to win.
 - Changing the approved-sender configuration format or address syntax.
 - Rejecting malformed entries when exactly one later valid sender is present.
 - Exercising OAuth, Gmail, App Engine, or real mailbox data.
+
+## Verification
+
+- Python 3.12.8 and Python 3.14.0 each passed all 44 offline tests.
+- Three behavioral hostile mutations were rejected by four or five regressions
+  each: allowing any non-empty sender list, rejecting only an empty sender list,
+  and restoring first-match allow-list authorization.
+- Static-contract hostile mutations were rejected when cardinality code,
+  focused regressions, completed plan evidence, or security documentation was
+  removed or weakened.
+- `make check` passed on Python 3.12.8 and Python 3.14.0, including the source
+  baseline, 44-test suite, and bytecode build, and the rooted checker passed
+  from an external working directory.
+- Exact-path diff, generated-artifact, unchanged dependency/workflow, whitespace,
+  shell, and credential-like addition inspections passed.
+- No OAuth credentials, Gmail API, App Engine service, network request, or real
+  mailbox data was used.

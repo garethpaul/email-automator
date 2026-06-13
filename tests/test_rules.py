@@ -198,6 +198,24 @@ class RuleTests(unittest.TestCase):
             rules.approved_sender(msg),
         )
 
+    def test_approved_sender_rejects_duplicate_valid_entries(self):
+        msg = {
+            "from": [
+                ("Allowed", "approveduser@approveduser.com"),
+                ("Duplicate", "approveduser@approveduser.com"),
+            ]
+        }
+
+        self.assertIsNone(rules.approved_sender(msg))
+
+    def test_approved_sender_rejects_mixed_valid_entries_in_any_order(self):
+        allowed = ("Allowed", "approveduser@approveduser.com")
+        unknown = ("Unknown", "stranger@example.com")
+
+        for senders in ([allowed, unknown], [unknown, allowed]):
+            with self.subTest(senders=senders):
+                self.assertIsNone(rules.approved_sender({"from": senders}))
+
     def test_configured_from_users_reads_environment(self):
         original_value = os.environ.get("AUTOMATION_APPROVED_SENDERS")
         os.environ["AUTOMATION_APPROVED_SENDERS"] = "first@example.com, second@example.com, "
@@ -486,6 +504,28 @@ class RuleTests(unittest.TestCase):
 
         self.assertEqual([], sent)
         self.assertTrue(rules.cache_check("malformed-sender-message"))
+
+    def test_valid_email_rejects_ambiguous_sender_metadata_without_side_effects(self):
+        sent = []
+        original_send = rules.sendEmail
+        rules.sendEmail = lambda *args: sent.append(args) or True
+        msg = {
+            "from": [
+                ("Allowed", "approveduser@approveduser.com"),
+                ("Unknown", "stranger@example.com"),
+            ],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "ambiguous-sender-message",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+        try:
+            self.assertFalse(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual([], sent)
+        self.assertTrue(rules.cache_check("ambiguous-sender-message"))
 
     def test_valid_email_rejects_invalid_from_email(self):
         os.environ["AUTOMATION_FROM_EMAIL"] = "robot@example.com\r\nBcc: attacker@example.com"

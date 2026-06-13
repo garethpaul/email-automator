@@ -47,6 +47,8 @@ Current baseline:
   effects.
 - Inbound malformed sender metadata is rejected before message reservation or
   delivery.
+- Inbound authorization requires one structurally valid sender identity;
+  ambiguous multi-sender metadata is rejected before side effects.
 - Outbound automation From addresses are validated before generated Gmail
   messages are created.
 - The core `valid_email` send decision also requires the message to be

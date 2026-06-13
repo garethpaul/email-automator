@@ -203,15 +203,14 @@ def approved_sender(msg):
             continue
         normalized_senders.append((normalized_address, address))
 
-    if automation_address and any(
-        normalized_address == automation_address
-        for normalized_address, _address in normalized_senders
-    ):
+    if len(normalized_senders) != 1:
         return None
 
-    for normalized_address, address in normalized_senders:
-        if normalized_address in allowed:
-            return address
+    normalized_address, address = normalized_senders[0]
+    if automation_address and normalized_address == automation_address:
+        return None
+    if normalized_address in allowed:
+        return address
     return None
 
 def valid_email(msg, user_id):
