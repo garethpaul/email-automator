@@ -124,6 +124,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   reservation or delivery.
 - The authorization path ignores malformed sender metadata and fails closed
   before reserving a message ID or sending a reply.
+- Authorization requires exactly one structurally valid sender identity;
+  duplicate or mixed valid `From` entries fail closed before side effects.
 - Outbound `AUTOMATION_FROM_EMAIL` is validated before `CreateMessage` is
   called, and invalid From configuration prevents automated sends.
 - Automated reply rule matching scans only a bounded inbound body prefix before
@@ -184,6 +186,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   self-sender rejection.
 - See `docs/plans/2026-06-13-email-text-boundary.md` for fail-closed body and
   subject text normalization.
+- See `docs/plans/2026-06-13-email-sender-cardinality.md` for unambiguous
+  inbound sender authorization.
 
 ## Contributing
 

@@ -16,6 +16,7 @@ GMAIL_MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gmail-message-id-fetch-ca
 SENDER_REFRESH_PLAN="$ROOT_DIR/docs/plans/2026-06-12-approved-sender-config-refresh.md"
 SELF_REPLY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-self-reply-guard.md"
 TEXT_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-text-boundary.md"
+SENDER_CARDINALITY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-sender-cardinality.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -63,6 +64,7 @@ for path in \
   "docs/plans/2026-06-12-approved-sender-config-refresh.md" \
   "docs/plans/2026-06-13-email-self-reply-guard.md" \
   "docs/plans/2026-06-13-email-text-boundary.md" \
+  "docs/plans/2026-06-13-email-sender-cardinality.md" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
@@ -73,6 +75,34 @@ for path in \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
 done
+
+for sender_cardinality_contract in \
+  "if len(normalized_senders) != 1" \
+  "normalized_address, address = normalized_senders[0]" \
+  "test_approved_sender_rejects_duplicate_valid_entries" \
+  "test_approved_sender_rejects_mixed_valid_entries_in_any_order" \
+  "test_valid_email_rejects_ambiguous_sender_metadata_without_side_effects"; do
+  if ! grep -Fq "$sender_cardinality_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Sender identity cardinality contract is missing: $sender_cardinality_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "status: completed" "$SENDER_CARDINALITY_PLAN" ||
+  ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$SENDER_CARDINALITY_PLAN" ||
+  ! grep -Fq "hostile mutations were rejected" "$SENDER_CARDINALITY_PLAN" ||
+  ! grep -Fq "No OAuth" "$SENDER_CARDINALITY_PLAN"; then
+  printf '%s\n' "Email sender cardinality plan must record truthful completed verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'duplicate or mixed valid `From` entries fail closed' "$ROOT_DIR/README.md" ||
+  ! grep -Fq 'duplicate or mixed valid `From` entries fail closed' "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "ambiguous multi-sender metadata is rejected" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "Ambiguous multi-sender metadata now fails closed" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Project docs must preserve the sender identity cardinality boundary." >&2
+  exit 1
+fi
 
 EXPECTED_REQUIREMENTS='webob==1.8.10
 webapp2==2.5.2
