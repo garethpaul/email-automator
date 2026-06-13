@@ -18,6 +18,7 @@ SELF_REPLY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-self-reply-guard.md"
 TEXT_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-text-boundary.md"
 SENDER_CARDINALITY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-sender-cardinality.md"
 MIME_CHARSET_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-mime-charset-fallback.md"
+LOCATION_INDEPENDENT_MAKE_PLAN="$ROOT_DIR/docs/plans/2026-06-13-location-independent-make.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -69,6 +70,7 @@ for path in \
   "docs/plans/2026-06-13-email-text-boundary.md" \
   "docs/plans/2026-06-13-email-sender-cardinality.md" \
   "docs/plans/2026-06-13-email-mime-charset-fallback.md" \
+  "docs/plans/2026-06-13-location-independent-make.md" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
@@ -308,8 +310,8 @@ for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.
   fi
 done
 
-python3 -m py_compile "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"
-python3 -m unittest discover -s "$ROOT_DIR/tests" -p "test*.py"
+(cd "$ROOT_DIR" && python3 -m py_compile mail/rules.py tests/test_rules.py)
+(cd "$ROOT_DIR" && python3 -m unittest discover -s tests -p "test*.py")
 
 if command -v python2 >/dev/null 2>&1; then
   python2 -m py_compile \
@@ -481,6 +483,27 @@ fi
 if ! grep -Fq "build:" "$ROOT_DIR/Makefile" ||
   ! grep -Fq "verify: lint test build" "$ROOT_DIR/Makefile"; then
   printf '%s\n' "Makefile must expose make build and include it in verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq 'cd "$(ROOT)" && $(PYTHON) -m unittest discover' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq '"$(ROOT)/mail/rules.py"' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq '"$(ROOT)/tests/test_text_payload.py"' "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile verification commands must resolve paths from the loaded Makefile." >&2
+  exit 1
+fi
+
+if ! grep -Eq '^\(cd "\$ROOT_DIR" && python3 -m py_compile mail/rules\.py tests/test_rules\.py\)$' "$ROOT_DIR/scripts/check-baseline.sh" ||
+  ! grep -Eq '^\(cd "\$ROOT_DIR" && python3 -m unittest discover -s tests -p "test\*\.py"\)$' "$ROOT_DIR/scripts/check-baseline.sh"; then
+  printf '%s\n' "Baseline checker Python probes must run from the repository root." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$LOCATION_INDEPENDENT_MAKE_PLAN" ||
+  ! grep -Fq "from /tmp" "$LOCATION_INDEPENDENT_MAKE_PLAN"; then
+  printf '%s\n' "Location-independent Make plan must record completed status and external verification." >&2
   exit 1
 fi
 

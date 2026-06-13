@@ -1,6 +1,6 @@
 # Make Offline Verification Location Independent
 
-status: in progress
+status: completed
 
 ## Context
 
@@ -18,10 +18,12 @@ test suite runs.
 
 ## Verification
 
-- Run `make check` on Python 3.12 and 3.14 from the repository.
-- Run the absolute Makefile from `/tmp`.
-- Run hostile path mutations, shell syntax, whitespace, exact-path, secret, and
-  artifact checks.
+- `make check PYTHON=python3` passed all 50 tests and the compile gate.
+- `make check PYTHON=python3.14` passed all 50 tests and the compile gate.
+- `make -f /absolute/path/to/Makefile check PYTHON=python3` passed from /tmp.
+- Six hostile path and documentation mutations were rejected by the baseline
+  checker; shell syntax, whitespace, exact-path, secret, and artifact checks
+  also passed.
 
 ## Risks
 

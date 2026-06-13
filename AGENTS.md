@@ -23,6 +23,7 @@
 - `requirements.txt` is only for the legacy Python 2/App Engine runtime; do not
   install it into the modern Python test environment.
 - Full baseline: `make check`
+- External baseline: `make -f /absolute/path/to/Makefile check`
 - Combined verification: `make verify`
 - Lint/static checks: `make lint`
 - Tests: `make test`

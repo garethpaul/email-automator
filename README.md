@@ -99,6 +99,9 @@ verify reply subject normalization, compile the rule module and tests through
 `make build`, cover bounded inbound body matching, and do not access Gmail or a
 real inbox.
 
+The Makefile resolves verification paths from its own location, so the same
+gate can be invoked from another directory with `make -f /path/to/Makefile check`.
+
 GitHub Actions runs the same offline `make check` baseline on Python 3.10,
 3.12, and 3.14 for pushes, pull requests, and manual dispatches. The workflow
 pins its actions by commit, grants read-only repository access, and does not

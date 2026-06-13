@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Made all Makefile verification recipes resolve paths from the loaded
+  Makefile so the offline gate works outside the repository directory.
 - Normalized missing, unknown, and malformed MIME charsets with UTF-8 replacement
   fallback before HTML or plain-text rule input is extracted.
 - Malformed non-string message bodies and subjects now normalize to empty text
