@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Normalized missing, unknown, and malformed MIME charsets with UTF-8 replacement
+  fallback before HTML or plain-text rule input is extracted.
 - Malformed non-string message bodies and subjects now normalize to empty text
   so rule matching and reply-subject generation fail closed instead of raising.
 - Ambiguous multi-sender metadata now fails closed before message reservation

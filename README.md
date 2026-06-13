@@ -64,6 +64,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   inbound body before generating response text.
 - Malformed non-string body and subject values normalize to empty text before
   rule matching or reply-subject generation.
+- Missing, unknown, and malformed MIME text charsets use replacement decoding
+  so one message cannot abort inbox processing.
 - Message IDs are normalized and length-bounded before duplicate-send cache keys
   are built.
 - Valid messages reserve their normalized ID with atomic memcache `add` before

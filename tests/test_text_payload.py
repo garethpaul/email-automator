@@ -1,0 +1,62 @@
+import importlib.util
+import os
+import unittest
+
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SPEC = importlib.util.spec_from_file_location(
+    "text_payload", os.path.join(ROOT, "mail", "text_payload.py")
+)
+TEXT_PAYLOAD = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(TEXT_PAYLOAD)
+
+
+class FakePart(object):
+    def __init__(self, decoded_payload, charset=None, raw_payload=None):
+        self.decoded_payload = decoded_payload
+        self.charset = charset
+        self.raw_payload = raw_payload
+
+    def get_payload(self, decode=False):
+        if decode:
+            return self.decoded_payload
+        return self.raw_payload
+
+    def get_content_charset(self):
+        return self.charset
+
+
+class TextPayloadTests(unittest.TestCase):
+    def test_uses_valid_declared_charset(self):
+        part = FakePart(b"caf\xe9", charset="iso-8859-1")
+
+        self.assertEqual(TEXT_PAYLOAD.decode_text_payload(part), "café")
+
+    def test_missing_charset_uses_utf8_replacement(self):
+        part = FakePart(b"hello \xff")
+
+        self.assertEqual(TEXT_PAYLOAD.decode_text_payload(part), "hello \ufffd")
+
+    def test_unknown_charset_uses_utf8_replacement(self):
+        part = FakePart(b"hello \xff", charset="x-unknown")
+
+        self.assertEqual(TEXT_PAYLOAD.decode_text_payload(part), "hello \ufffd")
+
+    def test_malformed_declared_charset_bytes_are_replaced(self):
+        part = FakePart(b"hello \xff", charset="utf-8")
+
+        self.assertEqual(TEXT_PAYLOAD.decode_text_payload(part), "hello \ufffd")
+
+    def test_string_payload_is_preserved(self):
+        part = FakePart(None, raw_payload="already decoded")
+
+        self.assertEqual(TEXT_PAYLOAD.decode_text_payload(part), "already decoded")
+
+    def test_absent_payload_becomes_empty_text(self):
+        part = FakePart(None)
+
+        self.assertEqual(TEXT_PAYLOAD.decode_text_payload(part), "")
+
+
+if __name__ == "__main__":
+    unittest.main()
