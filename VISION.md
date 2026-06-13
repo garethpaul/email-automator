@@ -68,6 +68,8 @@ Current baseline:
   reused as message identity, and malformed summaries are skipped.
 - GitHub Actions runs the offline `make check` baseline on Python 3.10, 3.12,
   and 3.14 for pushes, pull requests, and manual dispatches.
+- Makefile verification resolves repository paths independently of the caller's
+  working directory.
 - The exact legacy runtime manifest keeps patched WebOb and excludes unused
   virtualenv tooling.
 - A separate hosted dependency audit checks the explicit pins without
