@@ -51,6 +51,9 @@ Configured automation email addresses should be validated before matching
 senders or recipients so malformed environment values cannot trigger replies.
 The approved-sender allow-list is read at authorization time so removing an
 address does not depend on recycling the current process.
+The validated outbound automation address is rejected as an inbound sender at
+authorization time, even when accidentally allow-listed, preventing
+self-generated reply loops before message reservation or Gmail delivery.
 
 Inbound malformed sender metadata should fail closed before duplicate-message
 reservation or outbound delivery.

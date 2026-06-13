@@ -42,6 +42,9 @@ Current baseline:
   checks use them.
 - Approved senders are loaded from validated environment configuration at
   authorization time rather than cached when the module imports.
+- The current outbound automation address is rejected as an inbound sender at
+  authorization time, preventing self-generated reply loops before side
+  effects.
 - Inbound malformed sender metadata is rejected before message reservation or
   delivery.
 - Outbound automation From addresses are validated before generated Gmail

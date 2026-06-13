@@ -14,6 +14,7 @@ ATOMIC_DEDUP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-message-deduplication.
 MALFORMED_SENDER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md"
 GMAIL_MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gmail-message-id-fetch-cache.md"
 SENDER_REFRESH_PLAN="$ROOT_DIR/docs/plans/2026-06-12-approved-sender-config-refresh.md"
+SELF_REPLY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-self-reply-guard.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -59,6 +60,7 @@ for path in \
   "docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md" \
   "docs/plans/2026-06-12-gmail-message-id-fetch-cache.md" \
   "docs/plans/2026-06-12-approved-sender-config-refresh.md" \
+  "docs/plans/2026-06-13-email-self-reply-guard.md" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
@@ -93,6 +95,29 @@ for sender_refresh_contract in \
   fi
 done
 
+for self_reply_contract in \
+  "automation_address = configured_from_email()" \
+  "normalized_address == automation_address" \
+  "test_approved_sender_fails_closed_when_self_address_precedes_allowed_address" \
+  "test_approved_sender_fails_closed_when_self_address_follows_allowed_address" \
+  "test_approved_sender_rejects_configured_automation_address" \
+  "test_approved_sender_refreshes_automation_address" \
+  "test_valid_email_rejects_automation_sender_before_reservation"; do
+  if ! grep -Fq "$self_reply_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Automation self-reply guard is missing: $self_reply_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "status: completed" "$SELF_REPLY_PLAN" ||
+  ! grep -Fq "all 39 offline tests passed" "$SELF_REPLY_PLAN" ||
+  ! grep -Fq "Removing the self-sender comparison failed" "$SELF_REPLY_PLAN" ||
+  ! grep -Fq "raw environment read" "$SELF_REPLY_PLAN" ||
+  ! grep -Fq "git diff --check" "$SELF_REPLY_PLAN"; then
+  printf '%s\n' "Email self-reply guard plan must record completed verification." >&2
+  exit 1
+fi
+
 if grep -Fq "from_users = configured_from_users()" "$ROOT_DIR/mail/rules.py"; then
   printf '%s\n' "Approved senders must not be cached at module import time." >&2
   exit 1
@@ -108,6 +133,13 @@ fi
 for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
   if ! grep -Fq "authorization time" "$document"; then
     printf '%s\n' "$document must document approved-sender refresh at authorization time." >&2
+    exit 1
+  fi
+done
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "self-generated reply loops" "$document"; then
+    printf '%s\n' "$document must document automation self-sender rejection." >&2
     exit 1
   fi
 done
