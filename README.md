@@ -62,6 +62,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   reply subject normalization.
 - Automated reply rule matching scans only the first 10000 characters of an
   inbound body before generating response text.
+- Malformed non-string body and subject values normalize to empty text before
+  rule matching or reply-subject generation.
 - Message IDs are normalized and length-bounded before duplicate-send cache keys
   are built.
 - Valid messages reserve their normalized ID with atomic memcache `add` before
@@ -126,6 +128,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   called, and invalid From configuration prevents automated sends.
 - Automated reply rule matching scans only a bounded inbound body prefix before
   generating response text.
+- Non-string bodies produce no rule tokens, and non-string subjects use the
+  safe `Re:` fallback instead of raising during automation.
 - Message IDs are normalized and length-bounded before memcache duplicate-send
   keys are used.
 - Duplicate-message IDs are reserved atomically before outbound sends. A failed
@@ -178,6 +182,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   patched WebOb, removed virtualenv, and hosted dependency-audit boundary.
 - See `docs/plans/2026-06-13-email-self-reply-guard.md` for authorization-time
   self-sender rejection.
+- See `docs/plans/2026-06-13-email-text-boundary.md` for fail-closed body and
+  subject text normalization.
 
 ## Contributing
 

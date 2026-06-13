@@ -101,14 +101,19 @@ try:
 except NameError:
     STRING_TYPES = (str,)
 
+def text_value(value):
+    if isinstance(value, STRING_TYPES):
+        return value
+    return ""
+
 def bounded_email_body(txt):
-    return (txt or "")[:MAX_EMAIL_BODY_LENGTH]
+    return text_value(txt)[:MAX_EMAIL_BODY_LENGTH]
 
 def tokenize_email(txt):
     return WORD_RE.findall(bounded_email_body(txt))
 
 def reply_subject(subject):
-    normalized = " ".join((subject or "").splitlines()).strip()
+    normalized = " ".join(text_value(subject).splitlines()).strip()
     if len(normalized) > MAX_REPLY_SUBJECT_LENGTH:
         normalized = normalized[:MAX_REPLY_SUBJECT_LENGTH].rstrip()
     if not normalized:

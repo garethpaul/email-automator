@@ -15,6 +15,7 @@ MALFORMED_SENDER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-malformed-sender-
 GMAIL_MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gmail-message-id-fetch-cache.md"
 SENDER_REFRESH_PLAN="$ROOT_DIR/docs/plans/2026-06-12-approved-sender-config-refresh.md"
 SELF_REPLY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-self-reply-guard.md"
+TEXT_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-text-boundary.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -61,6 +62,7 @@ for path in \
   "docs/plans/2026-06-12-gmail-message-id-fetch-cache.md" \
   "docs/plans/2026-06-12-approved-sender-config-refresh.md" \
   "docs/plans/2026-06-13-email-self-reply-guard.md" \
+  "docs/plans/2026-06-13-email-text-boundary.md" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
@@ -435,6 +437,45 @@ if ! grep -Fq "MAX_REPLY_SUBJECT_LENGTH" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "test_reply_subject_removes_header_breaks" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "test_valid_email_sanitizes_reply_subject" "$ROOT_DIR/tests/test_rules.py"; then
   printf '%s\n' "Rule tests must cover single-line reply subject normalization." >&2
+  exit 1
+fi
+
+for text_boundary_contract in \
+  "def text_value" \
+  "isinstance(value, STRING_TYPES)" \
+  "return text_value(txt)[:MAX_EMAIL_BODY_LENGTH]" \
+  "text_value(subject).splitlines()" \
+  "test_rule_matching_treats_malformed_body_values_as_empty" \
+  "test_reply_subject_treats_malformed_values_as_empty"; do
+  if ! grep -Fq "$text_boundary_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Email text boundary contract is missing: $text_boundary_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq 'return (txt or "")[:MAX_EMAIL_BODY_LENGTH]' "$ROOT_DIR/mail/rules.py" ||
+  grep -Fq '(subject or "").splitlines()' "$ROOT_DIR/mail/rules.py"; then
+  printf '%s\n' "Rule text handling must not slice or split malformed values directly." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$TEXT_BOUNDARY_PLAN" ||
+  ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$TEXT_BOUNDARY_PLAN" ||
+  ! grep -Fq "hostile mutations were rejected" "$TEXT_BOUNDARY_PLAN" ||
+  ! grep -Fq "no Gmail" "$TEXT_BOUNDARY_PLAN"; then
+  printf '%s\n' "Email text boundary plan must record truthful completed verification." >&2
+  exit 1
+fi
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "Malformed non-string" "$document"; then
+    printf '%s\n' "$document must document fail-closed malformed text handling." >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "Malformed non-string body and subject values" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "AGENTS.md must retain the malformed text input boundary." >&2
   exit 1
 fi
 

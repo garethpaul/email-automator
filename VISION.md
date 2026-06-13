@@ -53,6 +53,8 @@ Current baseline:
   addressed to the automation mailbox.
 - Automated reply subjects collapse line breaks and cap length before sending.
 - Rule matching is limited to the first 10000 characters of an inbound body.
+- Malformed non-string body and subject values normalize to empty text before
+  rule matching or reply-subject generation.
 - Message IDs are normalized and length-bounded before duplicate-send cache keys
   are built.
 - Valid message IDs are atomically reserved before outbound sends, preventing

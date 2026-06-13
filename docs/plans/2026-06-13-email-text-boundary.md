@@ -2,7 +2,7 @@
 title: Email Automator Text Input Boundary
 type: reliability
 date: 2026-06-13
-status: planned
+status: completed
 ---
 
 # Email Automator Text Input Boundary
@@ -52,17 +52,18 @@ around email stripping, rule matching, and reply generation.
   evidence mandatory in the repository gate.
 - **Covers:** R6
 
-## Verification Plan
+## Verification
 
-- Run focused rule tests and full `make check` on available Python 3.12 and
-  Python 3.14 environments.
-- Apply isolated mutations for removed type checks, restored unsafe slicing or
-  `splitlines`, removed regressions, documentation drift, and incomplete plan
-  evidence.
-- Inspect exact paths, dependency files, credential-like additions, generated
-  artifacts, and staged files before committing.
-- Do not use OAuth credentials, Gmail APIs, App Engine services, or real inbox
-  data.
+- Python 3.12.8 and Python 3.14.0 passed the focused text-boundary regressions
+  and full `make check` with all 41 offline tests and bytecode compilation.
+- Eight isolated hostile mutations were rejected for removed compatibility or
+  type checks, restored unsafe slicing or `splitlines`, removed regressions,
+  documentation drift, and incomplete plan evidence.
+- Shell syntax, `git diff --check`, exact-path review, unchanged requirements,
+  credential-like addition inspection, generated-artifact inspection, and
+  staged-path review passed.
+- Verification used no OAuth credentials, no Gmail or App Engine service, no
+  live network request, and no real inbox data.
 
 ## Risks
 

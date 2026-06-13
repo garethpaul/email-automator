@@ -47,6 +47,13 @@ class RuleTests(unittest.TestCase):
 
         self.assertEqual([], rules.tokenize_email(body))
 
+    def test_rule_matching_treats_malformed_body_values_as_empty(self):
+        for body in (None, 42, [], {}, object()):
+            with self.subTest(body=body):
+                self.assertEqual([], rules.tokenize_email(body))
+                reply = rules.parse_email(body, chooser=choose_first)
+                self.assertIn(rules.unknown[0], reply)
+
     def test_reply_subject_removes_header_breaks(self):
         subject = rules.reply_subject("Coffee\r\nBcc: attacker@example.com")
 
@@ -59,6 +66,11 @@ class RuleTests(unittest.TestCase):
         subject = rules.reply_subject("x" * (rules.MAX_REPLY_SUBJECT_LENGTH + 20))
 
         self.assertEqual(4 + rules.MAX_REPLY_SUBJECT_LENGTH, len(subject))
+
+    def test_reply_subject_treats_malformed_values_as_empty(self):
+        for subject in (None, 42, [], {}, object()):
+            with self.subTest(subject=subject):
+                self.assertEqual("Re:", rules.reply_subject(subject))
 
     def test_approved_sender_returns_allowed_address(self):
         msg = {"from": [("Allowed", "approveduser@approveduser.com")]}
