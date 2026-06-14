@@ -202,6 +202,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   inbound sender authorization.
 - See `docs/plans/2026-06-14-email-recipient-metadata-boundary.md` for fail-closed
   inbound recipient metadata handling.
+- Use [`RUNTIME_VERIFICATION.md`](RUNTIME_VERIFICATION.md) for exact-head App
+  Engine, OAuth, Gmail, memcache, cron, inbound-handler, and outbound-delivery
+  evidence. It requires synthetic mailboxes and messages plus sanitized results.
 
 ## Contributing
 

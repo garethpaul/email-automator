@@ -22,6 +22,8 @@ LOCATION_INDEPENDENT_MAKE_PLAN="$ROOT_DIR/docs/plans/2026-06-13-location-indepen
 RECIPIENT_METADATA_PLAN="$ROOT_DIR/docs/plans/2026-06-14-email-recipient-metadata-boundary.md"
 CONFIGURED_USER_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-14-configured-user-id-authority.md"
 CONFIGURED_USER_ID_WHITESPACE_PLAN="$ROOT_DIR/docs/plans/2026-06-14-configured-user-id-whitespace.md"
+RUNTIME_VERIFICATION="$ROOT_DIR/RUNTIME_VERIFICATION.md"
+RUNTIME_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-email-automator-runtime-verification.md"
 CONFIGURED_USER_ID_CHECK="$ROOT_DIR/scripts/check-configured-user-id.py"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
@@ -45,6 +47,7 @@ require_file() {
 
 for path in \
   "README.md" \
+  "RUNTIME_VERIFICATION.md" \
   "SECURITY.md" \
   "requirements.txt" \
   "Makefile" \
@@ -78,6 +81,7 @@ for path in \
   "docs/plans/2026-06-14-email-recipient-metadata-boundary.md" \
   "docs/plans/2026-06-14-configured-user-id-authority.md" \
   "docs/plans/2026-06-14-configured-user-id-whitespace.md" \
+  "docs/plans/2026-06-14-email-automator-runtime-verification.md" \
   "scripts/check-configured-user-id.py" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
@@ -88,6 +92,93 @@ for path in \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
+done
+
+for python2_test_contract in \
+  'class CompatibleTestCase(unittest.TestCase):' \
+  'if not hasattr(unittest.TestCase, "subTest"):' \
+  'def subTest(self, **params):' \
+  '# -*- coding: utf-8 -*-' \
+  'from __future__ import unicode_literals' \
+  'except ImportError:' \
+  'imp.load_source("text_payload", TEXT_PAYLOAD_PATH)'; do
+  if ! grep -Fq "$python2_test_contract" "$ROOT_DIR/tests/test_rules.py" "$ROOT_DIR/tests/test_text_payload.py"; then
+    printf '%s\n' "Python 2 offline test compatibility contract is missing: $python2_test_contract" >&2
+    exit 1
+  fi
+done
+
+for runtime_contract in \
+  "Commit: pending implementation commit" \
+  "Pull request: pending" \
+  "Evidence status: not run" \
+  "isolated App Engine-compatible environment" \
+  "Required sanitized evidence" \
+  "Use only \`pass\`, \`fail\`, \`blocked\`, or \`not run\`" \
+  "A unit test, source compile, or static checker cannot mark an integration" \
+  "No App Engine server, OAuth flow, Gmail API call, memcache service, cron route,"; do
+  if ! grep -Fq "$runtime_contract" "$RUNTIME_VERIFICATION"; then
+    printf '%s\n' "Runtime verification matrix contract is missing: $runtime_contract" >&2
+    exit 1
+  fi
+done
+
+if [ "$(grep -Ec '^\| [0-9]+ \|' "$RUNTIME_VERIFICATION")" -ne 14 ] ||
+  [ "$(grep -Ec '^\| [0-9]+ \|.*\| not run \|$' "$RUNTIME_VERIFICATION")" -ne 14 ]; then
+  printf '%s\n' "Runtime verification matrix must retain 14 explicitly not-run scenarios." >&2
+  exit 1
+fi
+
+for runtime_scenario in \
+  "Legacy runtime setup" \
+  "App and cron configuration" \
+  "OAuth authorization start" \
+  "OAuth callback" \
+  "Gmail mailbox listing" \
+  "Gmail MIME fetch and decode" \
+  "Inbound mail handler" \
+  "Approved sender authorization" \
+  "Recipient and mailbox identity" \
+  "Rule matching and reply construction" \
+  "Atomic message deduplication" \
+  "Automated self-reply prevention" \
+  "Outbound delivery" \
+  "Cron and restart behavior"; do
+  if [ "$(grep -Fc "| $runtime_scenario |" "$RUNTIME_VERIFICATION")" -ne 1 ]; then
+    printf '%s\n' "Runtime verification scenario is missing or duplicated: $runtime_scenario" >&2
+    exit 1
+  fi
+done
+
+for runtime_guidance in \
+  "RUNTIME_VERIFICATION.md" \
+  "synthetic mailboxes and messages" \
+  "sanitized results"; do
+  if ! grep -Fq "$runtime_guidance" "$ROOT_DIR/README.md"; then
+    printf '%s\n' "README runtime verification guidance is missing: $runtime_guidance" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "Keep exact-head App Engine, OAuth, Gmail, memcache, cron, and delivery" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "App Engine, OAuth, Gmail, memcache, cron, inbound-mail, and delivery claims" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "Added an exact-head Email Automator runtime verification matrix" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Project guidance must retain the Email Automator runtime evidence boundary." >&2
+  exit 1
+fi
+
+for runtime_plan_contract in \
+  "status: completed" \
+  "## Status: Completed" \
+  "## Work Completed" \
+  "## Verification Completed" \
+  "Python 2.7.18 and Python 3.12.8" \
+  "Fourteen isolated hostile documentation and test-compatibility mutations" \
+  "14 runtime scenarios remain"; do
+  if ! grep -Fq "$runtime_plan_contract" "$RUNTIME_VERIFICATION_PLAN"; then
+    printf '%s\n' "Runtime verification plan must record completed evidence: $runtime_plan_contract" >&2
+    exit 1
+  fi
 done
 
 python3 "$CONFIGURED_USER_ID_CHECK" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/mail/check.py"

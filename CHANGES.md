@@ -2,6 +2,9 @@
 
 ## 2026-06-14
 
+- Added an exact-head Email Automator runtime verification matrix that
+  separates portable tests from sanitized App Engine, OAuth, Gmail, memcache,
+  cron, inbound-handler, and outbound-delivery evidence.
 - Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration.
 - Made `AUTOMATION_USER_ID` authoritative so request parameters cannot select
   another stored Gmail credential key.

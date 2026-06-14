@@ -38,6 +38,9 @@ Helpful reports include:
   demonstrated deployed import.
 - GitHub Actions runs the offline `make check` matrix on Python 3.10, 3.12, and
   3.14 with pinned actions, read-only repository access, and bounded jobs.
+- App Engine, OAuth, Gmail, memcache, cron, inbound-mail, and delivery claims
+  require the exact-head runtime verification matrix with synthetic accounts
+  and sanitized evidence.
 
 ## Service and API Notes
 

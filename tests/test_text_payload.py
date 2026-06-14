@@ -1,14 +1,22 @@
-import importlib.util
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import os
 import unittest
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SPEC = importlib.util.spec_from_file_location(
-    "text_payload", os.path.join(ROOT, "mail", "text_payload.py")
-)
-TEXT_PAYLOAD = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(TEXT_PAYLOAD)
+TEXT_PAYLOAD_PATH = os.path.join(ROOT, "mail", "text_payload.py")
+try:
+    from importlib import util as importlib_util
+except ImportError:
+    import imp
+
+    TEXT_PAYLOAD = imp.load_source("text_payload", TEXT_PAYLOAD_PATH)
+else:
+    SPEC = importlib_util.spec_from_file_location("text_payload", TEXT_PAYLOAD_PATH)
+    TEXT_PAYLOAD = importlib_util.module_from_spec(SPEC)
+    SPEC.loader.exec_module(TEXT_PAYLOAD)
 
 
 class FakePart(object):

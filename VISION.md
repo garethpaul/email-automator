@@ -36,6 +36,8 @@ Current baseline:
   Gmail, OAuth, or real inbox data.
 - App Engine debug mode defaults off, auth/mail routes require HTTPS/login, and
   `/mail/me` is reserved for admin/cron access.
+- Keep exact-head App Engine, OAuth, Gmail, memcache, cron, and delivery
+  evidence sanitized and separate from portable Python verification.
 - OAuth and automation mailbox placeholders are environment-backed instead of
   committed query parameters.
 - Mailbox credential identity is deployment-owned through `AUTOMATION_USER_ID`

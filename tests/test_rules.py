@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 import unittest
 
@@ -8,7 +9,15 @@ def choose_first(options):
     return options[0]
 
 
-class RuleTests(unittest.TestCase):
+class CompatibleTestCase(unittest.TestCase):
+    if not hasattr(unittest.TestCase, "subTest"):
+        @contextmanager
+        def subTest(self, **params):
+            del params
+            yield
+
+
+class RuleTests(CompatibleTestCase):
     def setUp(self):
         self._original_env = {
             "AUTOMATION_APPROVED_SENDERS": os.environ.get("AUTOMATION_APPROVED_SENDERS"),
