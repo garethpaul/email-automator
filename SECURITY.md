@@ -63,6 +63,8 @@ self-generated reply loops before message reservation or Gmail delivery.
 
 Inbound malformed sender metadata should fail closed before duplicate-message
 reservation or outbound delivery.
+Inbound malformed recipient metadata is ignored or rejected before
+duplicate-message reservation or outbound delivery.
 Inbound authorization also requires exactly one structurally valid sender
 identity; duplicate or mixed valid `From` entries fail closed before side
 effects.

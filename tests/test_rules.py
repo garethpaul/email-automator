@@ -302,6 +302,26 @@ class RuleTests(unittest.TestCase):
 
         self.assertFalse(rules.message_addressed_to_automation(msg, "automation@example.com"))
 
+    def test_message_addressed_to_automation_rejects_malformed_containers(self):
+        self.assertFalse(rules.message_addressed_to_automation(None, "automation@example.com"))
+        self.assertFalse(
+            rules.message_addressed_to_automation(
+                {"to": "automation@example.com"}, "automation@example.com"
+            )
+        )
+
+    def test_message_addressed_to_automation_skips_malformed_addresses(self):
+        msg = {
+            "to": [
+                None,
+                ("Only",),
+                ("Malformed", object()),
+                ("Automation", "Automation@Example.com"),
+            ]
+        }
+
+        self.assertTrue(rules.message_addressed_to_automation(msg, "automation@example.com"))
+
     def test_cache_check_allows_when_memcache_unavailable(self):
         original_memcache = rules.memcache
         rules.memcache = None
@@ -464,6 +484,25 @@ class RuleTests(unittest.TestCase):
             rules.sendEmail = original_send
 
         self.assertEqual([], sent)
+
+    def test_valid_email_rejects_malformed_recipient_metadata_without_side_effects(self):
+        sent = []
+        original_send = rules.sendEmail
+        rules.sendEmail = lambda *args: sent.append(args) or True
+        msg = {
+            "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": object(),
+            "msgId": "malformed-recipient-message",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+        try:
+            self.assertFalse(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual([], sent)
+        self.assertTrue(rules.cache_check("malformed-recipient-message"))
 
     def test_valid_email_rejects_automation_sender_before_reservation(self):
         os.environ["AUTOMATION_APPROVED_SENDERS"] = "robot@example.com"

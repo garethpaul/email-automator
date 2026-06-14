@@ -19,6 +19,7 @@ TEXT_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-text-boundary.md"
 SENDER_CARDINALITY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-sender-cardinality.md"
 MIME_CHARSET_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-mime-charset-fallback.md"
 LOCATION_INDEPENDENT_MAKE_PLAN="$ROOT_DIR/docs/plans/2026-06-13-location-independent-make.md"
+RECIPIENT_METADATA_PLAN="$ROOT_DIR/docs/plans/2026-06-14-email-recipient-metadata-boundary.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -71,6 +72,7 @@ for path in \
   "docs/plans/2026-06-13-email-sender-cardinality.md" \
   "docs/plans/2026-06-13-email-mime-charset-fallback.md" \
   "docs/plans/2026-06-13-location-independent-make.md" \
+  "docs/plans/2026-06-14-email-recipient-metadata-boundary.md" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
@@ -662,5 +664,32 @@ if grep -Fq "people[0] == my_email" "$ROOT_DIR/mail/list.py" ||
   printf '%s\n' "Automation recipient checks must compare normalized recipient addresses, not display names." >&2
   exit 1
 fi
+
+for recipient_metadata_contract in \
+  "if not isinstance(msg, dict):" \
+  "if not isinstance(recipients, (list, tuple)):" \
+  "except AttributeError:" \
+  "test_message_addressed_to_automation_rejects_malformed_containers" \
+  "test_message_addressed_to_automation_skips_malformed_addresses" \
+  "test_valid_email_rejects_malformed_recipient_metadata_without_side_effects"; do
+  if ! grep -Fq "$recipient_metadata_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Recipient metadata contract is missing: $recipient_metadata_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "status: completed" "$RECIPIENT_METADATA_PLAN" ||
+  ! grep -Fq "make check" "$RECIPIENT_METADATA_PLAN" ||
+  ! grep -Fq "hostile mutations were rejected" "$RECIPIENT_METADATA_PLAN"; then
+  printf '%s\n' "Recipient metadata plan must record completed verification." >&2
+  exit 1
+fi
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md" "$ROOT_DIR/AGENTS.md"; do
+  if ! grep -Fq "malformed recipient metadata" "$document"; then
+    printf '%s\n' "$document must document malformed recipient metadata rejection." >&2
+    exit 1
+  fi
+done
 
 printf '%s\n' "Email Automator maintenance baseline checks passed."

@@ -56,6 +56,8 @@ def configured_from_email():
     return email
 
 def message_addressed_to_automation(msg, target_email=None):
+    if not isinstance(msg, dict):
+        return False
     if target_email is None:
         target = configured_to_email()
     else:
@@ -63,12 +65,18 @@ def message_addressed_to_automation(msg, target_email=None):
     if not target:
         return False
 
-    for recipient in msg.get('to', []):
-        try:
-            address = recipient[1]
-        except (TypeError, IndexError):
+    recipients = msg.get('to') or []
+    if not isinstance(recipients, (list, tuple)):
+        return False
+
+    for recipient in recipients:
+        if not isinstance(recipient, (list, tuple)) or len(recipient) != 2:
             continue
-        if normalize_email_address(address) == target:
+        try:
+            address = normalize_email_address(recipient[1])
+        except AttributeError:
+            continue
+        if address == target:
             return True
     return False
 

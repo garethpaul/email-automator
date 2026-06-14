@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-14
+
+- Made malformed recipient metadata fail closed without crashing, reserving a
+  message ID, or sending an automated reply.
+
 ## 2026-06-13
 
 - Made all Makefile verification recipes resolve paths from the loaded

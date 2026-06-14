@@ -129,6 +129,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   reservation or delivery.
 - The authorization path ignores malformed sender metadata and fails closed
   before reserving a message ID or sending a reply.
+- The recipient matcher ignores malformed recipient metadata and rejects invalid
+  message or recipient containers before reservation or delivery.
 - Authorization requires exactly one structurally valid sender identity;
   duplicate or mixed valid `From` entries fail closed before side effects.
 - Outbound `AUTOMATION_FROM_EMAIL` is validated before `CreateMessage` is
@@ -193,6 +195,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   subject text normalization.
 - See `docs/plans/2026-06-13-email-sender-cardinality.md` for unambiguous
   inbound sender authorization.
+- See `docs/plans/2026-06-14-email-recipient-metadata-boundary.md` for fail-closed
+  inbound recipient metadata handling.
 
 ## Contributing
 
