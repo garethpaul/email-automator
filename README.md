@@ -56,7 +56,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `app.yaml` requires HTTPS for app routes, requires login for auth/mail
   handlers, and restricts `/mail/me` to admin/cron access.
 - `cron.yaml` schedules `/mail/me`; the automation user id comes from
-  `AUTOMATION_USER_ID` instead of a committed query parameter.
+  `AUTOMATION_USER_ID` instead of a committed or request-supplied query
+  parameter. Mail handlers do not let request input select another stored Gmail
+  credential key.
 - `mail/rules.py` contains the offline-testable automated reply rule logic,
   including recipient-address checks for the automation mailbox and single-line
   reply subject normalization.
@@ -120,6 +122,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTOMATION_USER_ID`,
   `AUTOMATION_TO_EMAIL`, `AUTOMATION_FROM_EMAIL`, and
   `AUTOMATION_APPROVED_SENDERS` are deployment/local configuration values.
+- `AUTOMATION_USER_ID` is authoritative for mail handlers; request parameters
+  cannot override the stored Gmail credential key.
 - Configured sender and recipient email addresses are validated before reply
   rules use them; malformed values are ignored instead of triggering replies.
 - `AUTOMATION_APPROVED_SENDERS` is read at authorization time so allow-list

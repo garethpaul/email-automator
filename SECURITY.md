@@ -61,6 +61,9 @@ The validated outbound automation address is rejected as an inbound sender at
 authorization time, even when accidentally allow-listed, preventing
 self-generated reply loops before message reservation or Gmail delivery.
 
+Mail routes select the stored Gmail credential key only from the deployment's
+`AUTOMATION_USER_ID`; logged-in request input cannot override mailbox identity.
+
 Inbound malformed sender metadata should fail closed before duplicate-message
 reservation or outbound delivery.
 Inbound malformed recipient metadata is ignored or rejected before

@@ -41,7 +41,7 @@ addr_spec=local  +  "\@"  +  domain
 email_address_re=re.compile('^'+addr_spec+'$')
 
 def request_user_id(handler):
-    userId = handler.request.get("userId") or os.environ.get("AUTOMATION_USER_ID")
+    userId = os.environ.get("AUTOMATION_USER_ID")
     if not userId:
         handler.error(400)
         handler.response.out.write(json.dumps({"error": "Missing automation user id"}))
