@@ -20,6 +20,8 @@ SENDER_CARDINALITY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-sender-cardinalit
 MIME_CHARSET_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-mime-charset-fallback.md"
 LOCATION_INDEPENDENT_MAKE_PLAN="$ROOT_DIR/docs/plans/2026-06-13-location-independent-make.md"
 RECIPIENT_METADATA_PLAN="$ROOT_DIR/docs/plans/2026-06-14-email-recipient-metadata-boundary.md"
+CONFIGURED_USER_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-14-configured-user-id-authority.md"
+CONFIGURED_USER_ID_CHECK="$ROOT_DIR/scripts/check-configured-user-id.py"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -73,6 +75,8 @@ for path in \
   "docs/plans/2026-06-13-email-mime-charset-fallback.md" \
   "docs/plans/2026-06-13-location-independent-make.md" \
   "docs/plans/2026-06-14-email-recipient-metadata-boundary.md" \
+  "docs/plans/2026-06-14-configured-user-id-authority.md" \
+  "scripts/check-configured-user-id.py" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
@@ -83,6 +87,8 @@ for path in \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
 done
+
+python3 "$CONFIGURED_USER_ID_CHECK" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/mail/check.py"
 
 for mime_decoder_contract in \
   'TEXT_TYPE = unicode' \
@@ -656,6 +662,14 @@ if ! grep -Fq "AUTOMATION_USER_ID" "$ROOT_DIR/mail/list.py" ||
   ! grep -Fq "test_configured_from_users_ignores_invalid_addresses" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "test_configured_to_email_rejects_invalid_address" "$ROOT_DIR/tests/test_rules.py"; then
   printf '%s\n' "Automation mailbox settings must come from environment-backed configuration." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$CONFIGURED_USER_ID_PLAN" ||
+  ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$CONFIGURED_USER_ID_PLAN" ||
+  ! grep -Fq "hostile source mutations were rejected" "$CONFIGURED_USER_ID_PLAN" ||
+  ! grep -Fq "No Gmail, OAuth, or App Engine runtime calls" "$CONFIGURED_USER_ID_PLAN"; then
+  printf '%s\n' "Configured automation user identity plan must record truthful completed verification." >&2
   exit 1
 fi
 

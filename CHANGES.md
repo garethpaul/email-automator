@@ -2,6 +2,8 @@
 
 ## 2026-06-14
 
+- Made `AUTOMATION_USER_ID` authoritative so request parameters cannot select
+  another stored Gmail credential key.
 - Made malformed recipient metadata fail closed without crashing, reserving a
   message ID, or sending an automated reply.
 

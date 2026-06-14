@@ -54,6 +54,8 @@
 - The scan found credential-adjacent names. Review configuration paths before running against real accounts.
 - Keep OAuth client IDs, OAuth client secrets, App Engine credentials, Gmail tokens, and real mailbox samples out of git.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTOMATION_USER_ID`, `AUTOMATION_TO_EMAIL`, `AUTOMATION_FROM_EMAIL`, and `AUTOMATION_APPROVED_SENDERS` are deployment/local configuration values.
+- Mail handlers must select stored Gmail credentials only from
+  `AUTOMATION_USER_ID`; request parameters must not override that identity.
 - Configured sender and recipient email addresses are validated before reply rules use them; malformed values are ignored instead of triggering replies.
 - Malformed sender metadata must fail closed before a message ID is reserved or any automated reply is sent.
 - Inbound malformed recipient metadata must fail closed before message reservation or

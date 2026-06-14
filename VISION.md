@@ -36,6 +36,8 @@ Current baseline:
   `/mail/me` is reserved for admin/cron access.
 - OAuth and automation mailbox placeholders are environment-backed instead of
   committed query parameters.
+- Mailbox credential identity is deployment-owned through `AUTOMATION_USER_ID`
+  and cannot be selected by request parameters.
 - Automation recipient checks compare normalized recipient addresses only, not
   display names.
 - Configured sender and recipient email addresses are validated before rule
