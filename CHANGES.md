@@ -2,6 +2,7 @@
 
 ## 2026-06-14
 
+- Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration.
 - Made `AUTOMATION_USER_ID` authoritative so request parameters cannot select
   another stored Gmail credential key.
 - Made malformed recipient metadata fail closed without crashing, reserving a

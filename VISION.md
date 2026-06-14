@@ -1,5 +1,7 @@
 ## Email Automator Vision
 
+Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration.
+
 This document explains the current state and direction of the project.
 Project overview and developer docs: [`README.md`](README.md)
 

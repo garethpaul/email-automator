@@ -124,6 +124,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   `AUTOMATION_APPROVED_SENDERS` are deployment/local configuration values.
 - `AUTOMATION_USER_ID` is authoritative for mail handlers; request parameters
   cannot override the stored Gmail credential key.
+- Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration.
 - Configured sender and recipient email addresses are validated before reply
   rules use them; malformed values are ignored instead of triggering replies.
 - `AUTOMATION_APPROVED_SENDERS` is read at authorization time so allow-list
