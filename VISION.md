@@ -47,6 +47,8 @@ Current baseline:
   effects.
 - Inbound malformed sender metadata is rejected before message reservation or
   delivery.
+- Inbound malformed recipient metadata fails closed before message reservation
+  or delivery while valid later recipients remain matchable.
 - Inbound authorization requires one structurally valid sender identity;
   ambiguous multi-sender metadata is rejected before side effects.
 - MIME text decoding fails closed without allowing malformed charset metadata to

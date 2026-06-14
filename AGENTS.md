@@ -56,6 +56,8 @@
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTOMATION_USER_ID`, `AUTOMATION_TO_EMAIL`, `AUTOMATION_FROM_EMAIL`, and `AUTOMATION_APPROVED_SENDERS` are deployment/local configuration values.
 - Configured sender and recipient email addresses are validated before reply rules use them; malformed values are ignored instead of triggering replies.
 - Malformed sender metadata must fail closed before a message ID is reserved or any automated reply is sent.
+- Inbound malformed recipient metadata must fail closed before message reservation or
+  delivery while preserving valid address matching in parseable collections.
 - Outbound `AUTOMATION_FROM_EMAIL` is validated before `CreateMessage` is called, and invalid From configuration prevents automated sends.
 - Automated reply rule matching scans only a bounded inbound body prefix before generating response text.
 - Malformed non-string body and subject values must normalize to empty text before rule matching or reply-subject generation.

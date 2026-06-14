@@ -2,7 +2,7 @@
 title: Email Recipient Metadata Boundary
 type: reliability
 date: 2026-06-14
-status: planned
+status: completed
 execution: code
 ---
 
@@ -27,11 +27,23 @@ multi-recipient matching without letting malformed metadata crash automation.
 - R5. Add executable and static contracts, completed evidence, and project
   guidance without changing sender, subject, body, MIME, or deduplication rules.
 
-## Planned Verification
+## Work Completed
 
-- Focused `tests.test_rules` suite.
-- Full location-independent `make check` on available Python runtimes.
-- Isolated hostile mutations for container, address, valid-tail, side-effect,
-  documentation, and completed-plan coverage.
+- Added fail-closed message and recipient-container validation.
+- Ignored malformed recipient entries and non-string-like addresses without
+  preventing a later valid automation address from matching.
+- Added direct helper regressions and a full `valid_email` no-side-effect case.
+- Extended the static baseline and project guidance.
+
+## Verification
+
+- Python 3.12.8: focused rule discovery passed 47 tests; the full repository
+  gate passed 53 tests including MIME payload regressions.
+- Six hostile mutations were rejected: message-container guard removal,
+  address guard removal, valid-tail regression removal, side-effect regression
+  removal, documentation removal, and planned-status restoration.
+- Full location-independent `make check` passed 53 tests on Python 3.12.8 and
+  Python 3.14.0, and passed through the absolute Makefile path from an external
+  working directory.
 - Exact intended-path, artifact, whitespace, conflict-marker, and changed-line
-  credential-pattern audits.
+  credential-pattern audits passed before commit.
