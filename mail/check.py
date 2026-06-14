@@ -17,7 +17,7 @@ http = httplib2.Http(memcache)
 service = build("gmail", "v1", http=http)
 
 def request_user_id(handler):
-    userId = os.environ.get("AUTOMATION_USER_ID")
+    userId = (os.environ.get("AUTOMATION_USER_ID") or "").strip()
     if not userId:
         handler.error(400)
         handler.response.out.write(json.dumps({"error": "Missing automation user id"}))

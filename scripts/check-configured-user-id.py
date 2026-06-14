@@ -11,7 +11,7 @@ def check_handler(path):
         raise SystemExit(f"{path}: request_user_id boundary must remain unique.")
 
     handler = source.split(start_marker, 1)[1].split(end_marker, 1)[0]
-    configured = 'userId = os.environ.get("AUTOMATION_USER_ID")'
+    configured = 'userId = (os.environ.get("AUTOMATION_USER_ID") or "").strip()'
     configured_lookup = 'os.environ.get("AUTOMATION_USER_ID")'
     missing = "if not userId:"
     error = "handler.error(400)"
