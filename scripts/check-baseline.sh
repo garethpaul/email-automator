@@ -25,6 +25,8 @@ CONFIGURED_USER_ID_WHITESPACE_PLAN="$ROOT_DIR/docs/plans/2026-06-14-configured-u
 RUNTIME_VERIFICATION="$ROOT_DIR/RUNTIME_VERIFICATION.md"
 RUNTIME_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-email-automator-runtime-verification.md"
 CONFIGURED_USER_ID_CHECK="$ROOT_DIR/scripts/check-configured-user-id.py"
+RAW_MESSAGE_CHECK="$ROOT_DIR/scripts/check-raw-message-boundary.py"
+RAW_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-15-raw-gmail-mime-boundary.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -60,9 +62,11 @@ for path in \
   "mail/auth.py" \
   "mail/check.py" \
   "mail/list.py" \
+  "mail/raw_message.py" \
   "mail/rules.py" \
   "mail/text_payload.py" \
   "tests/test_rules.py" \
+  "tests/test_raw_message.py" \
   "tests/test_text_payload.py" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
@@ -83,6 +87,8 @@ for path in \
   "docs/plans/2026-06-14-configured-user-id-whitespace.md" \
   "docs/plans/2026-06-14-email-automator-runtime-verification.md" \
   "scripts/check-configured-user-id.py" \
+  "scripts/check-raw-message-boundary.py" \
+  "docs/plans/2026-06-15-raw-gmail-mime-boundary.md" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
@@ -182,6 +188,21 @@ for runtime_plan_contract in \
 done
 
 python3 "$CONFIGURED_USER_ID_CHECK" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/mail/check.py"
+python3 "$RAW_MESSAGE_CHECK" "$ROOT_DIR/mail/raw_message.py" "$ROOT_DIR/mail/list.py"
+
+for raw_message_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  grep -Fq "Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing." "$ROOT_DIR/$raw_message_doc" || exit 1
+done
+
+for raw_message_plan_contract in \
+  "status: completed" \
+  "## Work Completed" \
+  "## Verification Completed" \
+  "Python 2.7.18 and Python 3.12.8" \
+  "all 58 offline tests" \
+  "Ten isolated hostile mutations were rejected"; do
+  grep -Fq "$raw_message_plan_contract" "$RAW_MESSAGE_PLAN" || exit 1
+done
 
 for configured_user_id_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   grep -Fq "Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration." "$ROOT_DIR/$configured_user_id_doc" || exit 1

@@ -1,5 +1,7 @@
 # Security Policy
 
+Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
+
 ## Supported Versions
 
 The supported security scope for `email-automator` is the current default branch, `master`. Older commits, tags, branches, forks, demos, and generated artifacts are not actively supported unless the repository explicitly marks them as maintained.

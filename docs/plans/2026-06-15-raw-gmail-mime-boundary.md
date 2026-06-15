@@ -1,7 +1,7 @@
 ---
 title: Raw Gmail MIME Boundary
 type: security
-status: in_progress
+status: completed
 date: 2026-06-15
 ---
 
@@ -51,3 +51,29 @@ the maintained offline boundary before sender, recipient, and rule checks run.
 - Reject mutations for type, alphabet, padding, encoded and decoded size,
   integration containment, documentation, and completed-plan evidence.
 - Audit generated artifacts, vendored files, secrets, and exact intended paths.
+
+## Work Completed
+
+- Added a dependency-free Python 2/3 decoder that validates raw value type,
+  ASCII base64url alphabet, padding, encoded length, and decoded size.
+- Capped decoded MIME input at 25 MiB and rejects impossible encoded sizes
+  before allocating the decoded body.
+- Routed Gmail raw values through the helper before `message_from_string` and
+  contained invalid values as an unparseable message.
+- Added focused tests, a source-order checker, build coverage, and synchronized
+  repository guidance.
+- Narrowed the configured-user-ID checker to the actual function boundary so
+  independent `return None` containment does not weaken its identity contract.
+
+## Verification Completed
+
+- Python 2.7.18 and Python 3.12.8 each passed `make check` from the repository
+  and from an external working directory with all 58 offline tests.
+- Both focused raw-message suites passed all five cases; maintained source and
+  tests compiled, both static checkers passed, shell syntax passed, and
+  `git diff --check` passed.
+- Ten isolated hostile mutations were rejected for type, alphabet, padding,
+  encoded and decoded size, integration call and containment, configured-ID
+  checker scope, documentation, and reopened plan status.
+- No App Engine server, OAuth flow, Gmail API call, memcache service, cron
+  route, live mailbox, or outbound delivery was executed or claimed.

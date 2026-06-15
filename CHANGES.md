@@ -1,5 +1,9 @@
 # Changes
 
+## 2026-06-15
+
+- Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
+
 ## 2026-06-14
 
 - Added an exact-head Email Automator runtime verification matrix that

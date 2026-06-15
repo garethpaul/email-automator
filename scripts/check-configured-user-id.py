@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 import pathlib
+import re
 import sys
 
 
 def check_handler(path):
     source = pathlib.Path(path).read_text(encoding="utf-8")
     start_marker = "def request_user_id(handler):"
-    end_marker = "\nclass "
     if source.count(start_marker) != 1:
         raise SystemExit(f"{path}: request_user_id boundary must remain unique.")
 
-    handler = source.split(start_marker, 1)[1].split(end_marker, 1)[0]
+    handler = re.split(r"\n(?:def|class) ", source.split(start_marker, 1)[1], maxsplit=1)[0]
     configured = 'userId = (os.environ.get("AUTOMATION_USER_ID") or "").strip()'
     configured_lookup = 'os.environ.get("AUTOMATION_USER_ID")'
     missing = "if not userId:"

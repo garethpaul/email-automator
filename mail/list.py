@@ -1,8 +1,12 @@
 # Import Global Libs
-import webapp2, jinja2, os, json, logging, base64,re, email, sys, logging
+import webapp2, jinja2, os, json, logging, re, email, sys, logging
 # Import Local Libs
 import auth, rules
 from text_payload import decode_text_payload
+try:
+    from .raw_message import decode_raw_message
+except (ImportError, ValueError):
+    from raw_message import decode_raw_message
 from database import default
 
 # Get Libs from Sys
@@ -196,7 +200,10 @@ def GetMimeMessage(service, user_id, msg_id):
     message = service.users().messages().get(userId='me', id=msg_id,
                                              format='raw').execute(http=auth.getAuth(user_id))
 
-    msg_str = base64.urlsafe_b64decode(message['raw'].encode('ASCII'))
+    try:
+        msg_str = decode_raw_message(message.get('raw'))
+    except ValueError:
+        return None
     msg = message_from_string(msg_str)
     subject=getmailheader(msg.get('Subject', ''))
     data["subject"] = subject
