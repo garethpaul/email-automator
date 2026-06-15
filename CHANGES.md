@@ -2,6 +2,7 @@
 
 ## 2026-06-15
 
+- Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
 - Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
 
 ## 2026-06-14

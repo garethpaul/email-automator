@@ -1,7 +1,7 @@
 ---
 title: Canonical Gmail Base64url
 type: security
-status: planned
+status: completed
 date: 2026-06-15
 ---
 
@@ -46,10 +46,10 @@ The URL-safe alphabet in section 5 retains the same encoding rules.
 
 **File:** `mail/raw_message.py`
 
-After decoding, compare the normalized input with the canonical URL-safe
-re-encoding of the decoded bytes while accepting either complete trailing
-padding or no trailing padding. Reject any other representation before MIME
-parser construction.
+Inspect the final URL-safe alphabet value with the RFC 4648 one-byte and
+two-byte pad-bit masks before decoding. Accept either complete trailing padding
+or no trailing padding, and reject nonzero discarded bits without allocating a
+second base64-sized buffer.
 
 ### U2: Mutation-Sensitive Verification
 
@@ -86,3 +86,23 @@ allocation.
   <https://www.rfc-editor.org/rfc/rfc4648#section-3.5>
 - RFC 4648 section 5, URL-safe base64 alphabet:
   <https://www.rfc-editor.org/rfc/rfc4648#section-5>
+
+## Work Completed
+
+- Added a Python 2/3-compatible canonical pad-bit check after strict alphabet,
+  padding-shape, and encoded-size validation and before decoded-body allocation.
+- Preserved canonical padded and unpadded Gmail values while rejecting
+  nonzero discarded pad bits in one-byte and two-byte final quanta.
+- Added focused regressions, static contracts, synchronized guidance, and
+  completed-plan enforcement.
+
+## Verification Completed
+
+- The repository-root and external-directory make check passed on Python
+  2.7.18 and Python 3.12.8 with all 60 offline tests and source compilation.
+- Focused raw-message tests passed on both interpreters; shell syntax, checker
+  compilation, static contracts, and `git diff --check` passed.
+- Eight isolated hostile mutations were rejected for removed or zeroed pad-bit
+  enforcement, post-decode validation, padded-input bypass, acceptance and
+  rejection test-contract removal, guidance removal, and reopened plan status.
+- No App Engine, OAuth, Gmail, mailbox, cron, or delivery integration was executed.

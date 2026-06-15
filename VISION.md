@@ -2,6 +2,7 @@
 
 Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration.
 Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
+Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
 
 This document explains the current state and direction of the project.
 Project overview and developer docs: [`README.md`](README.md)

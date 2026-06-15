@@ -4,6 +4,7 @@ import re
 
 
 MAX_RAW_MESSAGE_BYTES = 25 * 1024 * 1024
+BASE64URL_ALPHABET = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 BASE64URL_RE = re.compile(b"^[A-Za-z0-9_-]*={0,2}$")
 
 try:
@@ -40,6 +41,12 @@ def decode_raw_message(raw_value, max_bytes=MAX_RAW_MESSAGE_BYTES):
     max_encoded_length = ((max_bytes + 2) // 3) * 4
     if len(encoded) > max_encoded_length:
         raise ValueError("Raw Gmail message exceeds the encoded size limit.")
+
+    unpadded = encoded.rstrip(b"=")
+    pad_bit_mask = {2: 0x0F, 3: 0x03}.get(len(unpadded) % 4, 0)
+    last_value = BASE64URL_ALPHABET.find(unpadded[-1:])
+    if pad_bit_mask and (last_value & pad_bit_mask):
+        raise ValueError("Raw Gmail message is not canonical base64url.")
 
     padded = encoded + (b"=" * ((4 - len(encoded) % 4) % 4))
     try:
