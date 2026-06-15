@@ -71,6 +71,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   rule matching or reply-subject generation.
 - Missing, unknown, and malformed MIME text charsets use replacement decoding
   so one message cannot abort inbox processing.
+- Automated reply content uses only inline MIME text parts; attachments and
+  named file parts are excluded.
 - Message IDs are normalized and length-bounded before duplicate-send cache keys
   are built.
 - Valid messages reserve their normalized ID with atomic memcache `add` before

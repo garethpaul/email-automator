@@ -28,6 +28,7 @@ CONFIGURED_USER_ID_CHECK="$ROOT_DIR/scripts/check-configured-user-id.py"
 RAW_MESSAGE_CHECK="$ROOT_DIR/scripts/check-raw-message-boundary.py"
 RAW_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-15-raw-gmail-mime-boundary.md"
 CANONICAL_BASE64URL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-canonical-gmail-base64url.md"
+INLINE_BODY_PARTS_PLAN="$ROOT_DIR/docs/plans/2026-06-15-inline-mime-body-parts.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -61,12 +62,14 @@ for path in \
   ".github/workflows/check.yml" \
   "main.py" \
   "mail/auth.py" \
+  "mail/body_parts.py" \
   "mail/check.py" \
   "mail/list.py" \
   "mail/raw_message.py" \
   "mail/rules.py" \
   "mail/text_payload.py" \
   "tests/test_rules.py" \
+  "tests/test_body_parts.py" \
   "tests/test_raw_message.py" \
   "tests/test_text_payload.py" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
@@ -86,6 +89,7 @@ for path in \
   "docs/plans/2026-06-14-email-recipient-metadata-boundary.md" \
   "docs/plans/2026-06-14-configured-user-id-authority.md" \
   "docs/plans/2026-06-14-configured-user-id-whitespace.md" \
+  "docs/plans/2026-06-15-inline-mime-body-parts.md" \
   "docs/plans/2026-06-14-email-automator-runtime-verification.md" \
   "scripts/check-configured-user-id.py" \
   "scripts/check-raw-message-boundary.py" \
@@ -214,6 +218,42 @@ for canonical_base64url_plan_contract in \
   "No App Engine, OAuth, Gmail, mailbox, cron, or delivery integration was executed"; do
   if ! grep -Fqi "$canonical_base64url_plan_contract" "$CANONICAL_BASE64URL_PLAN"; then
     printf '%s\n' "Canonical Gmail base64url plan must record completion evidence: $canonical_base64url_plan_contract" >&2
+    exit 1
+  fi
+done
+
+for inline_body_contract in \
+  "def select_inline_body_parts(message):" \
+  'disposition.strip().lower() == "attachment"' \
+  "part.get_filename()" \
+  "html, text = select_inline_body_parts(msg)" \
+  "test_selects_inline_plain_text_and_html" \
+  "test_rejects_explicit_text_attachments" \
+  "test_rejects_named_parts_without_disposition" \
+  "test_rejects_descendants_of_attached_messages"; do
+  if ! grep -Fq "$inline_body_contract" "$ROOT_DIR/mail/body_parts.py" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/tests/test_body_parts.py"; then
+    printf '%s\n' "Inline MIME body selection contract is missing: $inline_body_contract" >&2
+    exit 1
+  fi
+done
+
+for inline_body_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "Automated reply content uses only inline MIME text parts; attachments and" "$ROOT_DIR/$inline_body_doc"; then
+    printf '%s\n' "$inline_body_doc must document inline MIME body selection." >&2
+    exit 1
+  fi
+done
+
+for inline_body_plan_contract in \
+  "status: completed" \
+  "## Work Completed" \
+  "## Verification Completed" \
+  "Python 2.7.18 and Python 3.12.8" \
+  "offline tests" \
+  "hostile mutations were rejected" \
+  "No App Engine, OAuth, Gmail, mailbox, cron, or delivery integration was executed"; do
+  if ! grep -Fq "$inline_body_plan_contract" "$INLINE_BODY_PARTS_PLAN"; then
+    printf '%s\n' "Inline MIME body selection plan must record completed evidence: $inline_body_plan_contract" >&2
     exit 1
   fi
 done

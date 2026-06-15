@@ -4,6 +4,10 @@ import webapp2, jinja2, os, json, logging, re, email, sys, logging
 import auth, rules
 from text_payload import decode_text_payload
 try:
+    from .body_parts import select_inline_body_parts
+except (ImportError, ValueError):
+    from body_parts import select_inline_body_parts
+try:
     from .raw_message import decode_raw_message
 except (ImportError, ValueError):
     from raw_message import decode_raw_message
@@ -213,13 +217,7 @@ def GetMimeMessage(service, user_id, msg_id):
     data["to"] = tos
     data['msgId'] = msg_id
 
-    html = []
-    text = []
-    for part in msg.walk():
-        if part.get_content_type() == "text/plain":
-            text.append(part)
-        elif part.get_content_type() == "text/html":
-            html.append(part)
+    html, text = select_inline_body_parts(msg)
     if html:
         soup = BeautifulSoup(decode_text_payload(html[0]))
         texts = soup.findAll(text=True)

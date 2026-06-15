@@ -61,6 +61,8 @@ Current baseline:
   ambiguous multi-sender metadata is rejected before side effects.
 - MIME text decoding fails closed without allowing malformed charset metadata to
   abort sender and rule processing.
+- Automated reply content uses only inline MIME text parts; attachments and
+  named file parts are excluded.
 - Outbound automation From addresses are validated before generated Gmail
   messages are created.
 - The core `valid_email` send decision also requires the message to be

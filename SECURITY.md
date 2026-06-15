@@ -58,6 +58,8 @@ errors from crashing the offline automation decision.
 Missing, unknown, and malformed MIME text charsets use UTF-8 replacement
 fallback before automated rules consume HTML or plain text; attachments remain
 outside automated rule input.
+Automated reply content uses only inline MIME text parts; attachments and named
+file parts are excluded.
 
 Configured automation email addresses should be validated before matching
 senders or recipients so malformed environment values cannot trigger replies.

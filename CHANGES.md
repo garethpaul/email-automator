@@ -2,6 +2,8 @@
 
 ## 2026-06-15
 
+- Automated reply content uses only inline MIME text parts; attachments and
+  named file parts are excluded.
 - Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
 - Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
 

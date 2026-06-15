@@ -66,6 +66,7 @@
 - Automated reply rule matching scans only a bounded inbound body prefix before generating response text.
 - Malformed non-string body and subject values must normalize to empty text before rule matching or reply-subject generation.
 - Missing and unknown MIME text charsets must use replacement decoding before HTML or plain-text rule input is extracted.
+- Automated reply content uses only inline MIME text parts; attachments and named file parts are excluded.
 - Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
 - Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
 - Normalize and bound Gmail message IDs before using them in memcache keys. Reserve each ID atomically before sending, and release the reservation when a send fails so a later retry can proceed.
