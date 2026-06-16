@@ -68,6 +68,7 @@
 - Missing and unknown MIME text charsets must use replacement decoding before HTML or plain-text rule input is extracted.
 - Automated reply content uses only inline MIME text parts; attachments and named file parts are excluded.
 - Encapsulated message descendants are excluded from automated reply content.
+- Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed.
 - Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
 - Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
 - Normalize and bound Gmail message IDs before using them in memcache keys. Reserve each ID atomically before sending, and release the reservation when a send fails so a later retry can proceed.

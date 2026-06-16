@@ -61,6 +61,7 @@ outside automated rule input.
 Automated reply content uses only inline MIME text parts; attachments and named
 file parts are excluded.
 Encapsulated message descendants are excluded from automated reply content.
+Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed.
 
 Configured automation email addresses should be validated before matching
 senders or recipients so malformed environment values cannot trigger replies.

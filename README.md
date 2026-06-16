@@ -74,6 +74,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Automated reply content uses only inline MIME text parts; attachments and
   named file parts are excluded.
 - Encapsulated message descendants are excluded from automated reply content.
+- Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed.
 - Message IDs are normalized and length-bounded before duplicate-send cache keys
   are built.
 - Valid messages reserve their normalized ID with atomic memcache `add` before

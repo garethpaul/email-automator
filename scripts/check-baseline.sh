@@ -30,6 +30,7 @@ RAW_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-15-raw-gmail-mime-boundary.md"
 CANONICAL_BASE64URL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-canonical-gmail-base64url.md"
 INLINE_BODY_PARTS_PLAN="$ROOT_DIR/docs/plans/2026-06-15-inline-mime-body-parts.md"
 ENCAPSULATED_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-encapsulated-message-body-boundary.md"
+RELATED_ROOT_PLAN="$ROOT_DIR/docs/plans/2026-06-16-related-multipart-root-boundary.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -92,6 +93,7 @@ for path in \
   "docs/plans/2026-06-14-configured-user-id-whitespace.md" \
   "docs/plans/2026-06-15-inline-mime-body-parts.md" \
   "docs/plans/2026-06-16-encapsulated-message-body-boundary.md" \
+  "docs/plans/2026-06-16-related-multipart-root-boundary.md" \
   "docs/plans/2026-06-14-email-automator-runtime-verification.md" \
   "scripts/check-configured-user-id.py" \
   "scripts/check-raw-message-boundary.py" \
@@ -257,6 +259,61 @@ for encapsulated_test_contract in \
   'self.assertEqual(selected_payloads(raw), ([], ["real body"]))'; do
   if ! printf '%s\n' "$encapsulated_test" | grep -Fq "$encapsulated_test_contract"; then
     printf '%s\n' "Encapsulated message regression is missing: $encapsulated_test_contract" >&2
+    exit 1
+  fi
+done
+
+for related_root_contract in \
+  'def _normalize_content_id(value):' \
+  'def _related_root(part):' \
+  'part.get_param("start")' \
+  'return children[0]' \
+  'child.get("Content-ID")' \
+  'content_type == "multipart/related"' \
+  'root = _related_root(part)' \
+  'if root is not None:' \
+  'test_related_without_start_traverses_only_first_child' \
+  'test_related_start_selects_matching_content_id' \
+  'test_related_with_unresolved_start_fails_closed'; do
+  if ! grep -Fq "$related_root_contract" "$ROOT_DIR/mail/body_parts.py" "$ROOT_DIR/tests/test_body_parts.py"; then
+    printf '%s\n' "Related multipart root contract is missing: $related_root_contract" >&2
+    exit 1
+  fi
+done
+
+related_guard_line=$(printf '%s\n' "$body_selector" | grep -nF 'if content_type == "multipart/related":' | cut -d: -f1)
+if [ -z "$related_guard_line" ] || [ -z "$multipart_traversal_line" ] || \
+  [ "$related_guard_line" -ge "$multipart_traversal_line" ]; then
+  printf '%s\n' "Related multipart roots must be resolved before generic multipart traversal." >&2
+  exit 1
+fi
+
+for related_root_test_contract in \
+  '<p>related override</p>' \
+  'start="<root@message>"' \
+  'Content-ID: <root@message>' \
+  'self.assertEqual(selected_payloads(raw), ([], []))'; do
+  if ! grep -Fq "$related_root_test_contract" "$ROOT_DIR/tests/test_body_parts.py"; then
+    printf '%s\n' "Related multipart root regression is missing: $related_root_test_contract" >&2
+    exit 1
+  fi
+done
+
+for related_root_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed." "$ROOT_DIR/$related_root_doc"; then
+    printf '%s\n' "$related_root_doc must document related multipart root ownership." >&2
+    exit 1
+  fi
+done
+
+for related_root_plan_contract in \
+  "## Status: Completed" \
+  "Python 2.7.18 and Python 3.12.8" \
+  "repository-root and external-directory make check passed" \
+  "hostile mutations were rejected" \
+  "No App Engine, OAuth, Gmail, cron, memcache, browser, live mailbox, paired"; do
+  if ! grep -Fq "$related_root_plan_contract" "$RELATED_ROOT_PLAN"; then
+    printf '%s\n' "Related multipart root plan must record completed evidence: $related_root_plan_contract" >&2
     exit 1
   fi
 done

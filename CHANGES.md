@@ -3,6 +3,7 @@
 ## 2026-06-16
 
 - Encapsulated message descendants are excluded from automated reply content.
+- Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed.
 
 ## 2026-06-15
 

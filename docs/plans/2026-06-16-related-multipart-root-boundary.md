@@ -1,6 +1,6 @@
 # Related Multipart Root Boundary
 
-## Status: In Progress
+## Status: Completed
 
 ## Context
 
@@ -47,3 +47,25 @@ related resources and must not become automated-reply input.
 No App Engine, OAuth, Gmail, cron, memcache, browser, live mailbox, paired
 provider, or outbound-delivery integration is available. This change is
 stacked on PR #16 and must retain base-first merge ordering.
+
+## Work Completed
+
+- Added a dedicated `multipart/related` root selector that uses the first
+  child when `start` is absent, matches an explicit `start` against normalized
+  child `Content-ID` values, and returns no candidate for an unresolved root.
+- Kept related-root resolution ahead of generic multipart traversal while
+  preserving attachment, named-part, and encapsulated-message boundaries.
+- Added real MIME regressions for implicit, explicit, nested-alternative, and
+  unresolved related roots, plus static contracts and synchronized guidance.
+
+## Verification Completed
+
+- The 8 focused body-part tests and all 68 offline tests passed under Python 2.7.18 and Python 3.12.8; byte-compilation also passed under both runtimes.
+- repository-root and external-directory make check passed.
+- Eight isolated hostile mutations were rejected; the mutations covered implicit-root selection,
+  explicit `Content-ID` matching, unresolved-root failure, traversal ordering,
+  regression expectations, maintained guidance, and completed-plan evidence.
+- Exact diff, generated-artifact, credential, dependency, conflict-marker,
+  file-mode, and whitespace audits passed for the intended paths.
+- No App Engine, OAuth, Gmail, cron, memcache, browser, live mailbox, paired
+  provider, or outbound-delivery integration was executed or claimed.

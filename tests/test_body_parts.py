@@ -113,6 +113,75 @@ Content-Type: text/html
 
         self.assertEqual(selected_payloads(raw), ([], ["real body"]))
 
+    def test_related_without_start_traverses_only_first_child(self):
+        raw = """Content-Type: multipart/related; boundary=related
+
+--related
+Content-Type: multipart/alternative; boundary=body
+
+--body
+Content-Type: text/plain
+
+plain root
+--body
+Content-Type: text/html
+
+<p>html root</p>
+--body--
+--related
+Content-Type: text/html
+Content-ID: <resource>
+
+<p>related override</p>
+--related--
+"""
+
+        self.assertEqual(selected_payloads(raw), (["<p>html root</p>"], ["plain root"]))
+
+    def test_related_start_selects_matching_content_id(self):
+        raw = """Content-Type: multipart/related; boundary=related; start="<root@message>"
+
+--related
+Content-Type: text/html
+Content-ID: <resource>
+
+<p>related override</p>
+--related
+Content-Type: multipart/alternative; boundary=body
+Content-ID: <root@message>
+
+--body
+Content-Type: text/plain
+
+plain root
+--body
+Content-Type: text/html
+
+<p>html root</p>
+--body--
+--related--
+"""
+
+        self.assertEqual(selected_payloads(raw), (["<p>html root</p>"], ["plain root"]))
+
+    def test_related_with_unresolved_start_fails_closed(self):
+        raw = """Content-Type: multipart/related; boundary=related; start="<missing>"
+
+--related
+Content-Type: text/plain
+Content-ID: <first>
+
+untrusted fallback
+--related
+Content-Type: text/html
+Content-ID: <second>
+
+<p>related override</p>
+--related--
+"""
+
+        self.assertEqual(selected_payloads(raw), ([], []))
+
 
 if __name__ == "__main__":
     unittest.main()
