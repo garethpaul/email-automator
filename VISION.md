@@ -63,6 +63,7 @@ Current baseline:
   abort sender and rule processing.
 - Automated reply content uses only inline MIME text parts; attachments and
   named file parts are excluded.
+- Encapsulated message descendants are excluded from automated reply content.
 - Outbound automation From addresses are validated before generated Gmail
   messages are created.
 - The core `valid_email` send decision also requires the message to be

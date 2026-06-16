@@ -1,6 +1,6 @@
 # Encapsulated Message Body Boundary
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -41,3 +41,17 @@ reply input.
 
 No App Engine, OAuth, Gmail, cron, memcache, browser, live mailbox, or outbound
 delivery integration is available in this environment.
+
+## Verification Results
+
+- The pre-fix focused reproduction selected nested HTML from an undecorated
+  encapsulated message alongside the legitimate outer plain-text body.
+- Five focused body-part tests passed on Python 2.7 and Python 3.
+- Seven isolated hostile mutations were rejected for guard removal and
+  reordering, regression removal, fixture and expectation weakening, guidance
+  removal, and plan status rollback.
+- `sh -n scripts/check-baseline.sh` and `git diff --check` passed before the
+  complete repository gate.
+- Repository-root and external-directory `make check` passed with Python 2.7
+  and Python 3. Each run passed all 65 offline tests and byte-compiled the
+  maintained MIME helpers and test modules.

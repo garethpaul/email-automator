@@ -1,5 +1,9 @@
 # Changes
 
+## 2026-06-16
+
+- Encapsulated message descendants are excluded from automated reply content.
+
 ## 2026-06-15
 
 - Automated reply content uses only inline MIME text parts; attachments and

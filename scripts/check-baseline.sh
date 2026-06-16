@@ -29,6 +29,7 @@ RAW_MESSAGE_CHECK="$ROOT_DIR/scripts/check-raw-message-boundary.py"
 RAW_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-15-raw-gmail-mime-boundary.md"
 CANONICAL_BASE64URL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-canonical-gmail-base64url.md"
 INLINE_BODY_PARTS_PLAN="$ROOT_DIR/docs/plans/2026-06-15-inline-mime-body-parts.md"
+ENCAPSULATED_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-encapsulated-message-body-boundary.md"
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
@@ -90,6 +91,7 @@ for path in \
   "docs/plans/2026-06-14-configured-user-id-authority.md" \
   "docs/plans/2026-06-14-configured-user-id-whitespace.md" \
   "docs/plans/2026-06-15-inline-mime-body-parts.md" \
+  "docs/plans/2026-06-16-encapsulated-message-body-boundary.md" \
   "docs/plans/2026-06-14-email-automator-runtime-verification.md" \
   "scripts/check-configured-user-id.py" \
   "scripts/check-raw-message-boundary.py" \
@@ -226,13 +228,53 @@ for inline_body_contract in \
   "def select_inline_body_parts(message):" \
   'disposition.strip().lower() == "attachment"' \
   "part.get_filename()" \
+  'content_type == "message/rfc822"' \
   "html, text = select_inline_body_parts(msg)" \
   "test_selects_inline_plain_text_and_html" \
   "test_rejects_explicit_text_attachments" \
   "test_rejects_named_parts_without_disposition" \
-  "test_rejects_descendants_of_attached_messages"; do
+  "test_rejects_descendants_of_attached_messages" \
+  "test_rejects_descendants_of_undecorated_encapsulated_messages"; do
   if ! grep -Fq "$inline_body_contract" "$ROOT_DIR/mail/body_parts.py" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/tests/test_body_parts.py"; then
     printf '%s\n' "Inline MIME body selection contract is missing: $inline_body_contract" >&2
+    exit 1
+  fi
+done
+
+body_selector=$(sed -n '/def select_inline_body_parts(message):/,/^    collect(message)$/p' "$ROOT_DIR/mail/body_parts.py")
+encapsulated_guard_line=$(printf '%s\n' "$body_selector" | grep -nF 'if content_type == "message/rfc822":' | cut -d: -f1)
+multipart_traversal_line=$(printf '%s\n' "$body_selector" | grep -nF 'if part.is_multipart():' | cut -d: -f1)
+if [ -z "$encapsulated_guard_line" ] || [ -z "$multipart_traversal_line" ] || \
+  [ "$encapsulated_guard_line" -ge "$multipart_traversal_line" ]; then
+  printf '%s\n' "Encapsulated message parts must be rejected before multipart descendant traversal." >&2
+  exit 1
+fi
+
+encapsulated_test=$(sed -n '/def test_rejects_descendants_of_undecorated_encapsulated_messages/,/^if __name__ ==/p' "$ROOT_DIR/tests/test_body_parts.py")
+for encapsulated_test_contract in \
+  "Content-Type: message/rfc822" \
+  "<p>encapsulated override</p>" \
+  'self.assertEqual(selected_payloads(raw), ([], ["real body"]))'; do
+  if ! printf '%s\n' "$encapsulated_test" | grep -Fq "$encapsulated_test_contract"; then
+    printf '%s\n' "Encapsulated message regression is missing: $encapsulated_test_contract" >&2
+    exit 1
+  fi
+done
+
+for encapsulated_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "Encapsulated message descendants are excluded from automated reply content." "$ROOT_DIR/$encapsulated_doc"; then
+    printf '%s\n' "$encapsulated_doc must document the encapsulated message body boundary." >&2
+    exit 1
+  fi
+done
+
+for encapsulated_plan_contract in \
+  "## Status: Completed" \
+  "make check" \
+  "hostile mutations" \
+  "No App Engine, OAuth, Gmail, cron, memcache, browser, live mailbox, or outbound"; do
+  if ! grep -Fq "$encapsulated_plan_contract" "$ENCAPSULATED_MESSAGE_PLAN"; then
+    printf '%s\n' "Encapsulated message body plan must record completed evidence: $encapsulated_plan_contract" >&2
     exit 1
   fi
 done

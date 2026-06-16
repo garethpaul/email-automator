@@ -95,6 +95,24 @@ Content-Type: text/html
 
         self.assertEqual(selected_payloads(raw), ([], ["real body"]))
 
+    def test_rejects_descendants_of_undecorated_encapsulated_messages(self):
+        raw = """Content-Type: multipart/mixed; boundary=outer
+
+--outer
+Content-Type: text/plain
+
+real body
+--outer
+Content-Type: message/rfc822
+
+Content-Type: text/html
+
+<p>encapsulated override</p>
+--outer--
+"""
+
+        self.assertEqual(selected_payloads(raw), ([], ["real body"]))
+
 
 if __name__ == "__main__":
     unittest.main()

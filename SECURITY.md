@@ -60,6 +60,7 @@ fallback before automated rules consume HTML or plain text; attachments remain
 outside automated rule input.
 Automated reply content uses only inline MIME text parts; attachments and named
 file parts are excluded.
+Encapsulated message descendants are excluded from automated reply content.
 
 Configured automation email addresses should be validated before matching
 senders or recipients so malformed environment values cannot trigger replies.

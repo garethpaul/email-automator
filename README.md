@@ -73,6 +73,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   so one message cannot abort inbox processing.
 - Automated reply content uses only inline MIME text parts; attachments and
   named file parts are excluded.
+- Encapsulated message descendants are excluded from automated reply content.
 - Message IDs are normalized and length-bounded before duplicate-send cache keys
   are built.
 - Valid messages reserve their normalized ID with atomic memcache `add` before
