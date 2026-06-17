@@ -311,6 +311,9 @@ for related_root_plan_contract in \
   "Python 2.7.18 and Python 3.12.8" \
   "repository-root and external-directory make check passed" \
   "hostile mutations were rejected" \
+  "b416487e6dd6dcb6f311d56701631a101b5b1fa1" \
+  'push run `27589720478`' \
+  'pull-request run `27589725848`' \
   "No App Engine, OAuth, Gmail, cron, memcache, browser, live mailbox, paired"; do
   if ! grep -Fq "$related_root_plan_contract" "$RELATED_ROOT_PLAN"; then
     printf '%s\n' "Related multipart root plan must record completed evidence: $related_root_plan_contract" >&2

@@ -67,5 +67,12 @@ stacked on PR #16 and must retain base-first merge ordering.
   regression expectations, maintained guidance, and completed-plan evidence.
 - Exact diff, generated-artifact, credential, dependency, conflict-marker,
   file-mode, and whitespace audits passed for the intended paths.
+- The implementation was committed as
+  `b416487e6dd6dcb6f311d56701631a101b5b1fa1`.
+- Canonical hosted verification passed on that exact implementation head:
+  push run `27589720478` and pull-request run `27589725848` each completed
+  successfully across Python 3.10, 3.12, and 3.14, including both dependency
+  audit jobs. PR #17 remained open, clean, and mergeable, and the branch had no
+  open code-scanning alerts.
 - No App Engine, OAuth, Gmail, cron, memcache, browser, live mailbox, paired
   provider, or outbound-delivery integration was executed or claimed.
