@@ -9,6 +9,8 @@
   rejection so one hostile message cannot abort the mailbox scan.
 - Centralized reply construction with Gmail base64url serialization and CR/LF/
   NUL header rejection.
+- Made the vendored httplib2 TLS socket wrapper select the TLS protocol
+  explicitly instead of inheriting the interpreter default.
 
 ## 2026-06-16
 

@@ -74,6 +74,7 @@ for path in \
   "mail/text_payload.py" \
   "tests/test_body_parts.py" \
   "tests/test_integration_contracts.py" \
+  "tests/test_legacy_httplib2_security.py" \
   "tests/test_mime_parser.py" \
   "tests/test_raw_message.py" \
   "tests/test_reply_message.py" \
@@ -319,6 +320,12 @@ for reply_message_contract in \
     exit 1
   fi
 done
+
+if ! grep -Fq 'ssl_version=ssl.PROTOCOL_TLS' "$ROOT_DIR/libs/httplib2/__init__.py" ||
+  ! grep -Fq 'test_tls_socket_wrapper_selects_tls_protocol_explicitly' "$ROOT_DIR/tests/test_legacy_httplib2_security.py"; then
+  printf '%s\n' "Vendored httplib2 must select the TLS protocol explicitly." >&2
+  exit 1
+fi
 
 if grep -Fq 'base64.b64encode(message.as_string())' "$ROOT_DIR/mail/send.py"; then
   printf '%s\n' "Gmail replies must use canonical base64url encoding." >&2
@@ -640,7 +647,7 @@ for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.
   fi
 done
 
-(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)
+(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_legacy_httplib2_security.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)
 (cd "$ROOT_DIR" && python3 -m unittest discover -s tests -p "test*.py")
 
 if command -v python2 >/dev/null 2>&1; then
@@ -832,7 +839,7 @@ if ! grep -Fq 'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DI
   exit 1
 fi
 
-if ! grep -Fq '(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)' "$ROOT_DIR/scripts/check-baseline.sh" ||
+if ! grep -Fq '(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_legacy_httplib2_security.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)' "$ROOT_DIR/scripts/check-baseline.sh" ||
   ! grep -Eq '^\(cd "\$ROOT_DIR" && python3 -m unittest discover -s tests -p "test\*\.py"\)$' "$ROOT_DIR/scripts/check-baseline.sh"; then
   printf '%s\n' "Baseline checker Python probes must run from the repository root." >&2
   exit 1
