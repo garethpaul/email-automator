@@ -1,5 +1,52 @@
 # Changes
 
+## 2026-06-19
+
+- Bounded MIME traversal depth, MIME part count, and decoded text extraction.
+- Rejected duplicate multipart/related roots and all encapsulated `message/*`
+  descendants from automated reply content.
+- Converted parser recursion and missing-safe-body failures into per-message
+  rejection so one hostile message cannot abort the mailbox scan.
+- Centralized reply construction with Gmail base64url serialization and CR/LF/
+  NUL header rejection.
+
+## 2026-06-16
+
+- Encapsulated message descendants are excluded from automated reply content.
+- Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed.
+
+## 2026-06-15
+
+- Automated reply content uses only inline MIME text parts; attachments and
+  named file parts are excluded.
+- Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
+- Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
+
+## 2026-06-14
+
+- Added an exact-head Email Automator runtime verification matrix that
+  separates portable tests from sanitized App Engine, OAuth, Gmail, memcache,
+  cron, inbound-handler, and outbound-delivery evidence.
+- Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration.
+- Made `AUTOMATION_USER_ID` authoritative so request parameters cannot select
+  another stored Gmail credential key.
+- Made malformed recipient metadata fail closed without crashing, reserving a
+  message ID, or sending an automated reply.
+
+## 2026-06-13
+
+- Made all Makefile verification recipes resolve paths from the loaded
+  Makefile so the offline gate works outside the repository directory.
+- Normalized missing, unknown, and malformed MIME charsets with UTF-8 replacement
+  fallback before HTML or plain-text rule input is extracted.
+- Malformed non-string message bodies and subjects now normalize to empty text
+  so rule matching and reply-subject generation fail closed instead of raising.
+- Ambiguous multi-sender metadata now fails closed before message reservation
+  or automated reply delivery.
+- Reject the current outbound automation address as an inbound approved sender
+  to prevent self-generated reply loops before reservation or delivery.
+- Added normalized, authorization-time refresh and no-side-effect regressions.
+
 ## 2026-06-12
 
 - Switched Gmail MIME retrieval and parsed-message caching from thread IDs to
@@ -15,6 +62,12 @@
   allow-list additions and removals apply without a process restart.
 - Added a rotation regression and a static guard against restoring an
   import-time sender snapshot.
+- Raised WebOb to the Python 2-compatible 1.8.10 security floor and removed
+  unused virtualenv tooling from the application requirements.
+- Added a pinned, credential-free dependency-audit job that checks the explicit
+  legacy pins without installing or resolving the Python 2 runtime on Python 3.
+- Fixed both hosted checkouts to disable persisted credentials and use the
+  fixed Ubuntu 24.04 runner.
 
 ## 2026-06-10
 

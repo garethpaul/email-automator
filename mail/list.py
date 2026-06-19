@@ -1,7 +1,20 @@
 # Import Global Libs
-import webapp2, jinja2, os, json, logging, base64,re, email, sys, logging
+import webapp2, jinja2, os, json, logging, re, email, sys, logging
 # Import Local Libs
 import auth, rules
+from text_payload import decode_text_payload
+try:
+    from .body_parts import select_inline_body_parts
+except (ImportError, ValueError):
+    from body_parts import select_inline_body_parts
+try:
+    from .raw_message import decode_raw_message
+except (ImportError, ValueError):
+    from raw_message import decode_raw_message
+try:
+    from .mime_parser import parse_raw_mime
+except (ImportError, ValueError):
+    from mime_parser import parse_raw_mime
 from database import default
 
 # Get Libs from Sys
@@ -20,7 +33,6 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
-from email import message_from_string
 from email.mime.text import MIMEText
 from email.Utils import parseaddr
 from email.Header import decode_header
@@ -40,7 +52,7 @@ addr_spec=local  +  "\@"  +  domain
 email_address_re=re.compile('^'+addr_spec+'$')
 
 def request_user_id(handler):
-    userId = handler.request.get("userId") or os.environ.get("AUTOMATION_USER_ID")
+    userId = (os.environ.get("AUTOMATION_USER_ID") or "").strip()
     if not userId:
         handler.error(400)
         handler.response.out.write(json.dumps({"error": "Missing automation user id"}))
@@ -195,8 +207,13 @@ def GetMimeMessage(service, user_id, msg_id):
     message = service.users().messages().get(userId='me', id=msg_id,
                                              format='raw').execute(http=auth.getAuth(user_id))
 
-    msg_str = base64.urlsafe_b64decode(message['raw'].encode('ASCII'))
-    msg = message_from_string(msg_str)
+    try:
+        msg_str = decode_raw_message(message.get('raw'))
+    except ValueError:
+        return None
+    msg = parse_raw_mime(msg_str)
+    if msg is None:
+        return None
     subject=getmailheader(msg.get('Subject', ''))
     data["subject"] = subject
     from_ = getmailaddresses(msg, 'from')
@@ -205,21 +222,15 @@ def GetMimeMessage(service, user_id, msg_id):
     data["to"] = tos
     data['msgId'] = msg_id
 
-    html = []
-    text = []
-    for part in msg.walk():
-        if part.get_content_type() == "text/plain":
-            text.append(part)
-        elif part.get_content_type() == "text/html":
-            html.append(part)
+    html, text = select_inline_body_parts(msg)
     if html:
-        soup = BeautifulSoup(html[0].get_payload(decode=True).decode(html[0].get_content_charset()))
+        soup = BeautifulSoup(decode_text_payload(html[0]))
         texts = soup.findAll(text=True)
         data["payload"] = "".join(texts)
     elif text:
-        data["payload"] = text[0].get_payload(decode=True).decode(text[0].get_content_charset())
+        data["payload"] = decode_text_payload(text[0])
     else:
-        raise Exception('No suitable part found')
+        return None
     return data
 
   except errors.HttpError, error:

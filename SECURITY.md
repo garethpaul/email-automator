@@ -1,5 +1,14 @@
 # Security Policy
 
+Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
+Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
+MIME traversal rejects excessive nesting, excessive part counts, ambiguous
+multipart/related roots, and descendants of every `message/*` media type.
+Parser recursion and messages without a safe inline body fail closed without
+aborting the remaining mailbox scan. Reply MIME construction uses Gmail
+base64url encoding and rejects CR, LF, and NUL in sender, recipient, and subject
+fields.
+
 ## Supported Versions
 
 The supported security scope for `email-automator` is the current default branch, `master`. Older commits, tags, branches, forks, demos, and generated artifacts are not actively supported unless the repository explicitly marks them as maintained.
@@ -32,9 +41,15 @@ Helpful reports include:
 - Review found file, document, data, or media parsing flows; changes in those areas should receive security-focused review before merge.
 - Review found database, model, query, or persistence-related code; changes in those areas should receive security-focused review before merge.
 - Review found secret-like configuration names that require careful review before use; changes in those areas should receive security-focused review before merge.
-- Dependency manifests detected: requirements.txt. Dependency updates should preserve lockfiles when present and avoid introducing packages without a clear maintenance reason.
+- `requirements.txt` is an exact legacy Python 2/App Engine runtime boundary.
+  Keep WebOb at 1.8.10 or newer within Python 2 compatibility, do not restore
+  virtualenv as an application dependency, and avoid adding packages without a
+  demonstrated deployed import.
 - GitHub Actions runs the offline `make check` matrix on Python 3.10, 3.12, and
   3.14 with pinned actions, read-only repository access, and bounded jobs.
+- App Engine, OAuth, Gmail, memcache, cron, inbound-mail, and delivery claims
+  require the exact-head runtime verification matrix with synthetic accounts
+  and sanitized evidence.
 
 ## Service and API Notes
 
@@ -43,14 +58,36 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 Generated automated reply subjects should stay single-line and length-bounded
 before sending so mailbox header handling is not exposed to raw inbound subject
 text.
+Malformed non-string body and subject values normalize to empty text before
+rule matching or reply-subject generation, preventing decoded metadata shape
+errors from crashing the offline automation decision.
+Missing, unknown, and malformed MIME text charsets use UTF-8 replacement
+fallback before automated rules consume HTML or plain text; attachments remain
+outside automated rule input.
+Automated reply content uses only inline MIME text parts; attachments and named
+file parts are excluded.
+Encapsulated message descendants are excluded from automated reply content.
+Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed.
 
 Configured automation email addresses should be validated before matching
 senders or recipients so malformed environment values cannot trigger replies.
 The approved-sender allow-list is read at authorization time so removing an
 address does not depend on recycling the current process.
+The validated outbound automation address is rejected as an inbound sender at
+authorization time, even when accidentally allow-listed, preventing
+self-generated reply loops before message reservation or Gmail delivery.
+
+Mail routes select the stored Gmail credential key only from the deployment's
+`AUTOMATION_USER_ID`; logged-in request input cannot override mailbox identity.
+Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration.
 
 Inbound malformed sender metadata should fail closed before duplicate-message
 reservation or outbound delivery.
+Inbound malformed recipient metadata is ignored or rejected before
+duplicate-message reservation or outbound delivery.
+Inbound authorization also requires exactly one structurally valid sender
+identity; duplicate or mixed valid `From` entries fail closed before side
+effects.
 
 Outbound automation From addresses should be validated before creating Gmail
 messages so malformed environment values cannot reach generated headers.
@@ -72,6 +109,11 @@ access so stale thread content cannot replace a later message.
 ## Dependency and Supply Chain Security
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
+
+Hosted dependency auditing checks the explicit legacy pins without resolving or
+installing them on Python 3. This verifies known advisory status while keeping
+the separate Python 2/App Engine runtime limitation explicit. The modern
+offline rule matrix must remain dependency-free.
 
 ## Safe Research Guidelines
 

@@ -14,7 +14,26 @@ ATOMIC_DEDUP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-message-deduplication.
 MALFORMED_SENDER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md"
 GMAIL_MESSAGE_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gmail-message-id-fetch-cache.md"
 SENDER_REFRESH_PLAN="$ROOT_DIR/docs/plans/2026-06-12-approved-sender-config-refresh.md"
+SELF_REPLY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-self-reply-guard.md"
+TEXT_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-text-boundary.md"
+SENDER_CARDINALITY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-sender-cardinality.md"
+MIME_CHARSET_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-mime-charset-fallback.md"
+LOCATION_INDEPENDENT_MAKE_PLAN="$ROOT_DIR/docs/plans/2026-06-13-location-independent-make.md"
+RECIPIENT_METADATA_PLAN="$ROOT_DIR/docs/plans/2026-06-14-email-recipient-metadata-boundary.md"
+CONFIGURED_USER_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-14-configured-user-id-authority.md"
+CONFIGURED_USER_ID_WHITESPACE_PLAN="$ROOT_DIR/docs/plans/2026-06-14-configured-user-id-whitespace.md"
+RUNTIME_VERIFICATION="$ROOT_DIR/RUNTIME_VERIFICATION.md"
+RUNTIME_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-email-automator-runtime-verification.md"
+CONFIGURED_USER_ID_CHECK="$ROOT_DIR/scripts/check-configured-user-id.py"
+RAW_MESSAGE_CHECK="$ROOT_DIR/scripts/check-raw-message-boundary.py"
+RAW_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-15-raw-gmail-mime-boundary.md"
+CANONICAL_BASE64URL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-canonical-gmail-base64url.md"
+INLINE_BODY_PARTS_PLAN="$ROOT_DIR/docs/plans/2026-06-15-inline-mime-body-parts.md"
+ENCAPSULATED_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-encapsulated-message-body-boundary.md"
+RELATED_ROOT_PLAN="$ROOT_DIR/docs/plans/2026-06-16-related-multipart-root-boundary.md"
+DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
+REQUIREMENTS="$ROOT_DIR/requirements.txt"
 
 cleanup_bytecode() {
   find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -34,7 +53,9 @@ require_file() {
 
 for path in \
   "README.md" \
+  "RUNTIME_VERIFICATION.md" \
   "SECURITY.md" \
+  "requirements.txt" \
   "Makefile" \
   "VISION.md" \
   "CHANGES.md" \
@@ -43,10 +64,21 @@ for path in \
   ".github/workflows/check.yml" \
   "main.py" \
   "mail/auth.py" \
+  "mail/body_parts.py" \
   "mail/check.py" \
   "mail/list.py" \
+  "mail/mime_parser.py" \
+  "mail/raw_message.py" \
+  "mail/reply_message.py" \
   "mail/rules.py" \
+  "mail/text_payload.py" \
+  "tests/test_body_parts.py" \
+  "tests/test_integration_contracts.py" \
+  "tests/test_mime_parser.py" \
+  "tests/test_raw_message.py" \
+  "tests/test_reply_message.py" \
   "tests/test_rules.py" \
+  "tests/test_text_payload.py" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
   "docs/plans/2026-06-09-email-outbound-from-address-validation.md" \
@@ -56,6 +88,23 @@ for path in \
   "docs/plans/2026-06-12-001-fix-malformed-sender-metadata-plan.md" \
   "docs/plans/2026-06-12-gmail-message-id-fetch-cache.md" \
   "docs/plans/2026-06-12-approved-sender-config-refresh.md" \
+  "docs/plans/2026-06-13-email-self-reply-guard.md" \
+  "docs/plans/2026-06-13-email-text-boundary.md" \
+  "docs/plans/2026-06-13-email-sender-cardinality.md" \
+  "docs/plans/2026-06-13-email-mime-charset-fallback.md" \
+  "docs/plans/2026-06-13-location-independent-make.md" \
+  "docs/plans/2026-06-14-email-recipient-metadata-boundary.md" \
+  "docs/plans/2026-06-14-configured-user-id-authority.md" \
+  "docs/plans/2026-06-14-configured-user-id-whitespace.md" \
+  "docs/plans/2026-06-15-inline-mime-body-parts.md" \
+  "docs/plans/2026-06-16-encapsulated-message-body-boundary.md" \
+  "docs/plans/2026-06-16-related-multipart-root-boundary.md" \
+  "docs/plans/2026-06-14-email-automator-runtime-verification.md" \
+  "scripts/check-configured-user-id.py" \
+  "scripts/check-raw-message-boundary.py" \
+  "docs/plans/2026-06-15-raw-gmail-mime-boundary.md" \
+  "docs/plans/2026-06-15-canonical-gmail-base64url.md" \
+  "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
   "docs/plans/2026-06-09-email-rule-body-length-limit.md" \
   "docs/plans/2026-06-09-email-reply-subject-normalization.md" \
   "docs/plans/2026-06-09-email-valid-email-recipient-guard.md" \
@@ -66,6 +115,394 @@ for path in \
   require_file "$path"
 done
 
+for python2_test_contract in \
+  'class CompatibleTestCase(unittest.TestCase):' \
+  'if not hasattr(unittest.TestCase, "subTest"):' \
+  'def subTest(self, **params):' \
+  '# -*- coding: utf-8 -*-' \
+  'from __future__ import unicode_literals' \
+  'except ImportError:' \
+  'imp.load_source("text_payload", TEXT_PAYLOAD_PATH)'; do
+  if ! grep -Fq "$python2_test_contract" "$ROOT_DIR/tests/test_rules.py" "$ROOT_DIR/tests/test_text_payload.py"; then
+    printf '%s\n' "Python 2 offline test compatibility contract is missing: $python2_test_contract" >&2
+    exit 1
+  fi
+done
+
+for runtime_contract in \
+  "Commit: pending implementation commit" \
+  "Pull request: pending" \
+  "Evidence status: not run" \
+  "isolated App Engine-compatible environment" \
+  "Required sanitized evidence" \
+  "Use only \`pass\`, \`fail\`, \`blocked\`, or \`not run\`" \
+  "A unit test, source compile, or static checker cannot mark an integration" \
+  "No App Engine server, OAuth flow, Gmail API call, memcache service, cron route,"; do
+  if ! grep -Fq "$runtime_contract" "$RUNTIME_VERIFICATION"; then
+    printf '%s\n' "Runtime verification matrix contract is missing: $runtime_contract" >&2
+    exit 1
+  fi
+done
+
+if [ "$(grep -Ec '^\| [0-9]+ \|' "$RUNTIME_VERIFICATION")" -ne 14 ] ||
+  [ "$(grep -Ec '^\| [0-9]+ \|.*\| not run \|$' "$RUNTIME_VERIFICATION")" -ne 14 ]; then
+  printf '%s\n' "Runtime verification matrix must retain 14 explicitly not-run scenarios." >&2
+  exit 1
+fi
+
+for runtime_scenario in \
+  "Legacy runtime setup" \
+  "App and cron configuration" \
+  "OAuth authorization start" \
+  "OAuth callback" \
+  "Gmail mailbox listing" \
+  "Gmail MIME fetch and decode" \
+  "Inbound mail handler" \
+  "Approved sender authorization" \
+  "Recipient and mailbox identity" \
+  "Rule matching and reply construction" \
+  "Atomic message deduplication" \
+  "Automated self-reply prevention" \
+  "Outbound delivery" \
+  "Cron and restart behavior"; do
+  if [ "$(grep -Fc "| $runtime_scenario |" "$RUNTIME_VERIFICATION")" -ne 1 ]; then
+    printf '%s\n' "Runtime verification scenario is missing or duplicated: $runtime_scenario" >&2
+    exit 1
+  fi
+done
+
+for runtime_guidance in \
+  "RUNTIME_VERIFICATION.md" \
+  "synthetic mailboxes and messages" \
+  "sanitized results"; do
+  if ! grep -Fq "$runtime_guidance" "$ROOT_DIR/README.md"; then
+    printf '%s\n' "README runtime verification guidance is missing: $runtime_guidance" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "Keep exact-head App Engine, OAuth, Gmail, memcache, cron, and delivery" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "App Engine, OAuth, Gmail, memcache, cron, inbound-mail, and delivery claims" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "Added an exact-head Email Automator runtime verification matrix" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Project guidance must retain the Email Automator runtime evidence boundary." >&2
+  exit 1
+fi
+
+for runtime_plan_contract in \
+  "status: completed" \
+  "## Status: Completed" \
+  "## Work Completed" \
+  "## Verification Completed" \
+  "Python 2.7.18 and Python 3.12.8" \
+  "Fourteen isolated hostile documentation and test-compatibility mutations" \
+  "14 runtime scenarios remain"; do
+  if ! grep -Fq "$runtime_plan_contract" "$RUNTIME_VERIFICATION_PLAN"; then
+    printf '%s\n' "Runtime verification plan must record completed evidence: $runtime_plan_contract" >&2
+    exit 1
+  fi
+done
+
+python3 "$CONFIGURED_USER_ID_CHECK" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/mail/check.py"
+python3 "$RAW_MESSAGE_CHECK" "$ROOT_DIR/mail/raw_message.py" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/tests/test_raw_message.py"
+
+for raw_message_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  grep -Fq "Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing." "$ROOT_DIR/$raw_message_doc" || exit 1
+  grep -Fq "Raw Gmail MIME values reject noncanonical pad bits before MIME parsing." "$ROOT_DIR/$raw_message_doc" || exit 1
+done
+
+for raw_message_plan_contract in \
+  "status: completed" \
+  "## Work Completed" \
+  "## Verification Completed" \
+  "Python 2.7.18 and Python 3.12.8" \
+  "all 58 offline tests" \
+  "Ten isolated hostile mutations were rejected"; do
+  grep -Fq "$raw_message_plan_contract" "$RAW_MESSAGE_PLAN" || exit 1
+done
+
+for canonical_base64url_plan_contract in \
+  "status: completed" \
+  "repository-root and external-directory make check passed" \
+  "hostile mutations" \
+  "No App Engine, OAuth, Gmail, mailbox, cron, or delivery integration was executed"; do
+  if ! grep -Fqi "$canonical_base64url_plan_contract" "$CANONICAL_BASE64URL_PLAN"; then
+    printf '%s\n' "Canonical Gmail base64url plan must record completion evidence: $canonical_base64url_plan_contract" >&2
+    exit 1
+  fi
+done
+
+for inline_body_contract in \
+  "def select_inline_body_parts(message):" \
+  'disposition.strip().lower() == "attachment"' \
+  "part.get_filename()" \
+  'content_type == "message/rfc822"' \
+  "html, text = select_inline_body_parts(msg)" \
+  "test_selects_inline_plain_text_and_html" \
+  "test_rejects_explicit_text_attachments" \
+  "test_rejects_named_parts_without_disposition" \
+  "test_rejects_descendants_of_attached_messages" \
+  "test_rejects_descendants_of_undecorated_encapsulated_messages"; do
+  if ! grep -Fq "$inline_body_contract" "$ROOT_DIR/mail/body_parts.py" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/tests/test_body_parts.py"; then
+    printf '%s\n' "Inline MIME body selection contract is missing: $inline_body_contract" >&2
+    exit 1
+  fi
+done
+
+body_selector=$(sed -n '/def select_inline_body_parts(message):/,$p' "$ROOT_DIR/mail/body_parts.py")
+encapsulated_guard_line=$(printf '%s\n' "$body_selector" | grep -nF 'if part.get_content_maintype() == "message":' | cut -d: -f1)
+multipart_traversal_line=$(printf '%s\n' "$body_selector" | grep -nF 'if part.is_multipart():' | cut -d: -f1)
+if [ -z "$encapsulated_guard_line" ] || [ -z "$multipart_traversal_line" ] || \
+  [ "$encapsulated_guard_line" -ge "$multipart_traversal_line" ]; then
+  printf '%s\n' "Encapsulated message parts must be rejected before multipart descendant traversal." >&2
+  exit 1
+fi
+
+encapsulated_test=$(sed -n '/def test_rejects_descendants_of_undecorated_encapsulated_messages/,/^if __name__ ==/p' "$ROOT_DIR/tests/test_body_parts.py")
+for encapsulated_test_contract in \
+  "Content-Type: message/rfc822" \
+  "<p>encapsulated override</p>" \
+  'self.assertEqual(selected_payloads(raw), ([], ["real body"]))'; do
+  if ! printf '%s\n' "$encapsulated_test" | grep -Fq "$encapsulated_test_contract"; then
+    printf '%s\n' "Encapsulated message regression is missing: $encapsulated_test_contract" >&2
+    exit 1
+  fi
+done
+
+for related_root_contract in \
+  'def _normalize_content_id(value):' \
+  'def _related_root(part):' \
+  'part.get_param("start")' \
+  'return children[0]' \
+  'child.get("Content-ID")' \
+  'content_type == "multipart/related"' \
+  'root = _related_root(part)' \
+  'if root is None:' \
+  'if len(matches) != 1:' \
+  'test_related_without_start_traverses_only_first_child' \
+  'test_related_start_selects_matching_content_id' \
+  'test_related_with_unresolved_start_fails_closed' \
+  'test_related_with_duplicate_root_content_ids_fails_closed'; do
+  if ! grep -Fq "$related_root_contract" "$ROOT_DIR/mail/body_parts.py" "$ROOT_DIR/tests/test_body_parts.py"; then
+    printf '%s\n' "Related multipart root contract is missing: $related_root_contract" >&2
+    exit 1
+  fi
+done
+
+for hostile_mime_contract in \
+  'MAX_MIME_DEPTH = 64' \
+  'MAX_MIME_PARTS = 256' \
+  'if depth > MAX_MIME_DEPTH or part_count > MAX_MIME_PARTS:' \
+  'test_rejects_descendants_of_message_global_parts' \
+  'test_excessive_mime_nesting_fails_closed' \
+  'test_excessive_mime_part_count_fails_closed' \
+  'def parse_raw_mime(raw_message):' \
+  'except (TypeError, ValueError, RuntimeError):' \
+  'test_recursion_exhaustion_fails_closed'; do
+  if ! grep -Fq "$hostile_mime_contract" "$ROOT_DIR/mail/body_parts.py" "$ROOT_DIR/mail/mime_parser.py" "$ROOT_DIR/tests/test_body_parts.py" "$ROOT_DIR/tests/test_mime_parser.py"; then
+    printf '%s\n' "Hostile MIME boundary contract is missing: $hostile_mime_contract" >&2
+    exit 1
+  fi
+done
+
+for reply_message_contract in \
+  'def encode_raw_message(raw_message):' \
+  'base64.urlsafe_b64encode(raw_message)' \
+  'def _safe_header(value):' \
+  'if "\r" in value or "\n" in value or "\x00" in value:' \
+  'def create_message(sender, recipient, subject, message_text):' \
+  'return create_message(sender, to, subject, message_text)' \
+  'test_raw_message_encoding_uses_base64url_alphabet' \
+  'test_rejects_injected_reply_headers' \
+  'test_send_module_delegates_reply_encoding_to_guarded_helper'; do
+  if ! grep -Fq "$reply_message_contract" "$ROOT_DIR/mail/reply_message.py" "$ROOT_DIR/mail/send.py" "$ROOT_DIR/tests/test_reply_message.py" "$ROOT_DIR/tests/test_integration_contracts.py"; then
+    printf '%s\n' "Reply message construction contract is missing: $reply_message_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq 'base64.b64encode(message.as_string())' "$ROOT_DIR/mail/send.py"; then
+  printf '%s\n' "Gmail replies must use canonical base64url encoding." >&2
+  exit 1
+fi
+
+related_guard_line=$(printf '%s\n' "$body_selector" | grep -nF 'if content_type == "multipart/related":' | cut -d: -f1)
+if [ -z "$related_guard_line" ] || [ -z "$multipart_traversal_line" ] || \
+  [ "$related_guard_line" -ge "$multipart_traversal_line" ]; then
+  printf '%s\n' "Related multipart roots must be resolved before generic multipart traversal." >&2
+  exit 1
+fi
+
+for related_root_test_contract in \
+  '<p>related override</p>' \
+  'start="<root@message>"' \
+  'Content-ID: <root@message>' \
+  'self.assertEqual(selected_payloads(raw), ([], []))'; do
+  if ! grep -Fq "$related_root_test_contract" "$ROOT_DIR/tests/test_body_parts.py"; then
+    printf '%s\n' "Related multipart root regression is missing: $related_root_test_contract" >&2
+    exit 1
+  fi
+done
+
+for related_root_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed." "$ROOT_DIR/$related_root_doc"; then
+    printf '%s\n' "$related_root_doc must document related multipart root ownership." >&2
+    exit 1
+  fi
+done
+
+for related_root_plan_contract in \
+  "## Status: Completed" \
+  "Python 2.7.18 and Python 3.12.8" \
+  "repository-root and external-directory make check passed" \
+  "hostile mutations were rejected" \
+  "b416487e6dd6dcb6f311d56701631a101b5b1fa1" \
+  'push run `27589720478`' \
+  'pull-request run `27589725848`' \
+  "No App Engine, OAuth, Gmail, cron, memcache, browser, live mailbox, paired"; do
+  if ! grep -Fq "$related_root_plan_contract" "$RELATED_ROOT_PLAN"; then
+    printf '%s\n' "Related multipart root plan must record completed evidence: $related_root_plan_contract" >&2
+    exit 1
+  fi
+done
+
+for encapsulated_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "Encapsulated message descendants are excluded from automated reply content." "$ROOT_DIR/$encapsulated_doc"; then
+    printf '%s\n' "$encapsulated_doc must document the encapsulated message body boundary." >&2
+    exit 1
+  fi
+done
+
+for encapsulated_plan_contract in \
+  "## Status: Completed" \
+  "make check" \
+  "hostile mutations" \
+  "No App Engine, OAuth, Gmail, cron, memcache, browser, live mailbox, or outbound"; do
+  if ! grep -Fq "$encapsulated_plan_contract" "$ENCAPSULATED_MESSAGE_PLAN"; then
+    printf '%s\n' "Encapsulated message body plan must record completed evidence: $encapsulated_plan_contract" >&2
+    exit 1
+  fi
+done
+
+for inline_body_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "Automated reply content uses only inline MIME text parts; attachments and" "$ROOT_DIR/$inline_body_doc"; then
+    printf '%s\n' "$inline_body_doc must document inline MIME body selection." >&2
+    exit 1
+  fi
+done
+
+for inline_body_plan_contract in \
+  "status: completed" \
+  "## Work Completed" \
+  "## Verification Completed" \
+  "Python 2.7.18 and Python 3.12.8" \
+  "offline tests" \
+  "hostile mutations were rejected" \
+  "No App Engine, OAuth, Gmail, mailbox, cron, or delivery integration was executed"; do
+  if ! grep -Fq "$inline_body_plan_contract" "$INLINE_BODY_PARTS_PLAN"; then
+    printf '%s\n' "Inline MIME body selection plan must record completed evidence: $inline_body_plan_contract" >&2
+    exit 1
+  fi
+done
+
+for configured_user_id_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  grep -Fq "Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration." "$ROOT_DIR/$configured_user_id_doc" || exit 1
+done
+
+for mime_decoder_contract in \
+  'TEXT_TYPE = unicode' \
+  'charset = part.get_content_charset() or "utf-8"' \
+  'payload.decode(charset, errors="replace")' \
+  'except (LookupError, TypeError):' \
+  'payload.decode("utf-8", errors="replace")' \
+  'MAX_TEXT_PAYLOAD_BYTES = 1024 * 1024' \
+  'payload = payload[:max_bytes]' \
+  'decode_text_payload(html[0])' \
+  'decode_text_payload(text[0])'; do
+  if ! grep -Fq "$mime_decoder_contract" "$ROOT_DIR/mail/text_payload.py" "$ROOT_DIR/mail/list.py"; then
+    printf '%s\n' "MIME text decoding contract is missing: $mime_decoder_contract" >&2
+    exit 1
+  fi
+done
+
+for mime_test_contract in \
+  "test_uses_valid_declared_charset" \
+  "test_missing_charset_uses_utf8_replacement" \
+  "test_unknown_charset_uses_utf8_replacement" \
+  "test_malformed_declared_charset_bytes_are_replaced" \
+  "test_string_payload_is_preserved" \
+  "test_absent_payload_becomes_empty_text" \
+  "test_decoded_payload_is_bounded_before_text_parsing" \
+  "test_unicode_payload_is_bounded_without_splitting_code_points"; do
+  if ! grep -Fq "$mime_test_contract" "$ROOT_DIR/tests/test_text_payload.py"; then
+    printf '%s\n' "MIME decoder test contract is missing: $mime_test_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "malformed MIME text charsets" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "malformed MIME text charsets" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "MIME text decoding fails closed" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "Normalized missing, unknown, and malformed MIME charsets" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "unknown MIME text charsets" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "MIME charset fallback documentation must remain synchronized." >&2
+  exit 1
+fi
+
+for mime_plan_contract in \
+  "status: completed" \
+  "## Status: Completed" \
+  "6 focused tests" \
+  "make verify" \
+  "isolated hostile mutations were rejected" \
+  "No live Gmail or App Engine execution is claimed"; do
+  if ! grep -Fq "$mime_plan_contract" "$MIME_CHARSET_PLAN"; then
+    printf '%s\n' "MIME charset plan must record completed verification: $mime_plan_contract" >&2
+    exit 1
+  fi
+done
+
+for sender_cardinality_contract in \
+  "if len(normalized_senders) != 1" \
+  "normalized_address, address = normalized_senders[0]" \
+  "test_approved_sender_rejects_duplicate_valid_entries" \
+  "test_approved_sender_rejects_mixed_valid_entries_in_any_order" \
+  "test_valid_email_rejects_ambiguous_sender_metadata_without_side_effects"; do
+  if ! grep -Fq "$sender_cardinality_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Sender identity cardinality contract is missing: $sender_cardinality_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "status: completed" "$SENDER_CARDINALITY_PLAN" ||
+  ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$SENDER_CARDINALITY_PLAN" ||
+  ! grep -Fq "hostile mutations were rejected" "$SENDER_CARDINALITY_PLAN" ||
+  ! grep -Fq "No OAuth" "$SENDER_CARDINALITY_PLAN"; then
+  printf '%s\n' "Email sender cardinality plan must record truthful completed verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'duplicate or mixed valid `From` entries fail closed' "$ROOT_DIR/README.md" ||
+  ! grep -Fq 'duplicate or mixed valid `From` entries fail closed' "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "ambiguous multi-sender metadata is rejected" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "Ambiguous multi-sender metadata now fails closed" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Project docs must preserve the sender identity cardinality boundary." >&2
+  exit 1
+fi
+
+EXPECTED_REQUIREMENTS='webob==1.8.10
+webapp2==2.5.2
+uritemplate==0.6
+webtest==2.0.21'
+if [ "$(cat "$REQUIREMENTS")" != "$EXPECTED_REQUIREMENTS" ]; then
+  printf '%s\n' "requirements.txt must keep the exact patched legacy runtime boundary." >&2
+  exit 1
+fi
+
+if grep -Eiq '(^|[[:space:]])virtualenv([<=>[:space:]]|$)' "$REQUIREMENTS"; then
+  printf '%s\n' "requirements.txt must not restore unused virtualenv tooling." >&2
+  exit 1
+fi
+
 for sender_refresh_contract in \
   "allowed = set(configured_from_users())" \
   "test_approved_sender_uses_current_environment_allowlist"; do
@@ -75,13 +512,37 @@ for sender_refresh_contract in \
   fi
 done
 
+for self_reply_contract in \
+  "automation_address = configured_from_email()" \
+  "normalized_address == automation_address" \
+  "test_approved_sender_fails_closed_when_self_address_precedes_allowed_address" \
+  "test_approved_sender_fails_closed_when_self_address_follows_allowed_address" \
+  "test_approved_sender_rejects_configured_automation_address" \
+  "test_approved_sender_refreshes_automation_address" \
+  "test_valid_email_rejects_automation_sender_before_reservation"; do
+  if ! grep -Fq "$self_reply_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Automation self-reply guard is missing: $self_reply_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "status: completed" "$SELF_REPLY_PLAN" ||
+  ! grep -Fq "all 39 offline tests passed" "$SELF_REPLY_PLAN" ||
+  ! grep -Fq "Removing the self-sender comparison failed" "$SELF_REPLY_PLAN" ||
+  ! grep -Fq "raw environment read" "$SELF_REPLY_PLAN" ||
+  ! grep -Fq "git diff --check" "$SELF_REPLY_PLAN"; then
+  printf '%s\n' "Email self-reply guard plan must record completed verification." >&2
+  exit 1
+fi
+
 if grep -Fq "from_users = configured_from_users()" "$ROOT_DIR/mail/rules.py"; then
   printf '%s\n' "Approved senders must not be cached at module import time." >&2
   exit 1
 fi
 
 if ! grep -Fq "status: completed" "$SENDER_REFRESH_PLAN" ||
-  ! grep -Fq "34 offline tests" "$SENDER_REFRESH_PLAN"; then
+  ! grep -Fq 'Local Python 3.12.8 and 3.14.0: `make check` passed all 34 offline tests and' "$SENDER_REFRESH_PLAN" ||
+  ! grep -Fq "Five isolated hostile mutations were rejected" "$SENDER_REFRESH_PLAN"; then
   printf '%s\n' "Approved-sender refresh plan must remain completed and verified." >&2
   exit 1
 fi
@@ -92,6 +553,38 @@ for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.
     exit 1
   fi
 done
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "self-generated reply loops" "$document"; then
+    printf '%s\n' "$document must document automation self-sender rejection." >&2
+    exit 1
+  fi
+done
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "WebOb" "$document" || ! grep -Fq "virtualenv" "$document"; then
+    printf '%s\n' "$document must document patched WebOb and removed virtualenv tooling." >&2
+    exit 1
+  fi
+done
+
+if [ "$(grep -Fci 'status: completed' "$DEPENDENCY_PLAN")" -ne 1 ] ||
+  ! grep -Fq "## Work Completed" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "## Verification Results" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "no known" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "34 offline tests" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "330cab60f6c2cf4dca878519563ec8517d37e1d2" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "27430550372" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "27430552862" "$DEPENDENCY_PLAN" ||
+  ! grep -Fq "27430550455" "$DEPENDENCY_PLAN"; then
+  printf '%s\n' "Patched legacy requirements plan must remain completed and verified." >&2
+  exit 1
+fi
+
+if grep -Eiq '\b(planned|pending|todo|tbd)\b' "$DEPENDENCY_PLAN"; then
+  printf '%s\n' "Patched legacy requirements plan must not retain unfinished markers." >&2
+  exit 1
+fi
 
 for gmail_message_contract in \
   "def gmail_message_id" \
@@ -147,8 +640,8 @@ for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.
   fi
 done
 
-python3 -m py_compile "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"
-python3 -m unittest discover -s "$ROOT_DIR/tests" -p "test*.py"
+(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)
+(cd "$ROOT_DIR" && python3 -m unittest discover -s tests -p "test*.py")
 
 if command -v python2 >/dev/null 2>&1; then
   python2 -m py_compile \
@@ -156,6 +649,9 @@ if command -v python2 >/dev/null 2>&1; then
     "$ROOT_DIR/mail/auth.py" \
     "$ROOT_DIR/mail/check.py" \
     "$ROOT_DIR/mail/list.py" \
+    "$ROOT_DIR/mail/mime_parser.py" \
+    "$ROOT_DIR/mail/raw_message.py" \
+    "$ROOT_DIR/mail/reply_message.py" \
     "$ROOT_DIR/mail/rules.py"
 else
   printf '%s\n' "Skipping Python 2 syntax check: python2 is not installed."
@@ -198,7 +694,16 @@ if ! grep -Fq "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" "$CI_W
   ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ${{ matrix.python-version }}' "$CI_WORKFLOW" ||
+  ! grep -Fq 'python-version: "3.12"' "$CI_WORKFLOW" ||
   ! grep -Fq "run: make check" "$CI_WORKFLOW" ||
+  ! grep -Fq "dependency-audit:" "$CI_WORKFLOW" ||
+  ! grep -Fq "python -m pip install pip-audit==2.10.0" "$CI_WORKFLOW" ||
+  ! grep -Fq "pip-audit --disable-pip --no-deps -r requirements.txt" "$CI_WORKFLOW" ||
+  [ "$(grep -Fc 'persist-credentials: false' "$CI_WORKFLOW")" -ne 3 ] ||
+  [ "$(grep -Fc 'runs-on: ubuntu-24.04' "$CI_WORKFLOW")" -ne 3 ] ||
+  ! grep -Fq 'legacy-python2:' "$CI_WORKFLOW" ||
+  ! grep -Fq 'image: python:2.7.18@sha256:' "$CI_WORKFLOW" ||
+  ! grep -Fq 'python -m unittest discover -s tests -p "test*.py"' "$CI_WORKFLOW" ||
   ! grep -Fq "permissions:" "$CI_WORKFLOW" ||
   ! grep -Fq "contents: read" "$CI_WORKFLOW" ||
   ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
@@ -317,6 +822,28 @@ if ! grep -Fq "build:" "$ROOT_DIR/Makefile" ||
   exit 1
 fi
 
+if ! grep -Fq 'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq 'cd "$(ROOT)" && $(PYTHON) -m unittest discover' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq '"$(ROOT)/mail/rules.py"' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq '"$(ROOT)/mail/reply_message.py"' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq '"$(ROOT)/tests/test_reply_message.py"' "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile verification commands must resolve paths from the loaded Makefile." >&2
+  exit 1
+fi
+
+if ! grep -Fq '(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)' "$ROOT_DIR/scripts/check-baseline.sh" ||
+  ! grep -Eq '^\(cd "\$ROOT_DIR" && python3 -m unittest discover -s tests -p "test\*\.py"\)$' "$ROOT_DIR/scripts/check-baseline.sh"; then
+  printf '%s\n' "Baseline checker Python probes must run from the repository root." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$LOCATION_INDEPENDENT_MAKE_PLAN" ||
+  ! grep -Fq "from /tmp" "$LOCATION_INDEPENDENT_MAKE_PLAN"; then
+  printf '%s\n' "Location-independent Make plan must record completed status and external verification." >&2
+  exit 1
+fi
+
 if grep -R "dial 911" "$ROOT_DIR/mail" "$ROOT_DIR/tests" >/dev/null; then
   printf '%s\n' "Automated fallback replies must not mention dialing 911." >&2
   exit 1
@@ -353,6 +880,45 @@ if ! grep -Fq "MAX_REPLY_SUBJECT_LENGTH" "$ROOT_DIR/mail/rules.py" ||
   ! grep -Fq "test_reply_subject_removes_header_breaks" "$ROOT_DIR/tests/test_rules.py" ||
   ! grep -Fq "test_valid_email_sanitizes_reply_subject" "$ROOT_DIR/tests/test_rules.py"; then
   printf '%s\n' "Rule tests must cover single-line reply subject normalization." >&2
+  exit 1
+fi
+
+for text_boundary_contract in \
+  "def text_value" \
+  "isinstance(value, STRING_TYPES)" \
+  "return text_value(txt)[:MAX_EMAIL_BODY_LENGTH]" \
+  "text_value(subject).splitlines()" \
+  "test_rule_matching_treats_malformed_body_values_as_empty" \
+  "test_reply_subject_treats_malformed_values_as_empty"; do
+  if ! grep -Fq "$text_boundary_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Email text boundary contract is missing: $text_boundary_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq 'return (txt or "")[:MAX_EMAIL_BODY_LENGTH]' "$ROOT_DIR/mail/rules.py" ||
+  grep -Fq '(subject or "").splitlines()' "$ROOT_DIR/mail/rules.py"; then
+  printf '%s\n' "Rule text handling must not slice or split malformed values directly." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$TEXT_BOUNDARY_PLAN" ||
+  ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$TEXT_BOUNDARY_PLAN" ||
+  ! grep -Fq "hostile mutations were rejected" "$TEXT_BOUNDARY_PLAN" ||
+  ! grep -Fq "no Gmail" "$TEXT_BOUNDARY_PLAN"; then
+  printf '%s\n' "Email text boundary plan must record truthful completed verification." >&2
+  exit 1
+fi
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "Malformed non-string" "$document"; then
+    printf '%s\n' "$document must document fail-closed malformed text handling." >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "Malformed non-string body and subject values" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "AGENTS.md must retain the malformed text input boundary." >&2
   exit 1
 fi
 
@@ -428,10 +994,53 @@ if ! grep -Fq "AUTOMATION_USER_ID" "$ROOT_DIR/mail/list.py" ||
   exit 1
 fi
 
+if ! grep -Fq "status: completed" "$CONFIGURED_USER_ID_PLAN" ||
+  ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$CONFIGURED_USER_ID_PLAN" ||
+  ! grep -Fq "hostile source mutations were rejected" "$CONFIGURED_USER_ID_PLAN" ||
+  ! grep -Fq "No Gmail, OAuth, or App Engine runtime calls" "$CONFIGURED_USER_ID_PLAN"; then
+  printf '%s\n' "Configured automation user identity plan must record truthful completed verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$CONFIGURED_USER_ID_WHITESPACE_PLAN" ||
+  ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$CONFIGURED_USER_ID_WHITESPACE_PLAN" ||
+  ! grep -Fq "Eight hostile mutations were rejected" "$CONFIGURED_USER_ID_WHITESPACE_PLAN" ||
+  ! grep -Fq "No Gmail, OAuth, or App Engine runtime calls" "$CONFIGURED_USER_ID_WHITESPACE_PLAN"; then
+  printf '%s\n' "Configured user ID whitespace plan must record completed local verification." >&2
+  exit 1
+fi
+
 if grep -Fq "people[0] == my_email" "$ROOT_DIR/mail/list.py" ||
   grep -Fq "people[1] == my_email" "$ROOT_DIR/mail/list.py"; then
   printf '%s\n' "Automation recipient checks must compare normalized recipient addresses, not display names." >&2
   exit 1
 fi
+
+for recipient_metadata_contract in \
+  "if not isinstance(msg, dict):" \
+  "if not isinstance(recipients, (list, tuple)):" \
+  "except AttributeError:" \
+  "test_message_addressed_to_automation_rejects_malformed_containers" \
+  "test_message_addressed_to_automation_skips_malformed_addresses" \
+  "test_valid_email_rejects_malformed_recipient_metadata_without_side_effects"; do
+  if ! grep -Fq "$recipient_metadata_contract" "$ROOT_DIR/mail/rules.py" "$ROOT_DIR/tests/test_rules.py"; then
+    printf '%s\n' "Recipient metadata contract is missing: $recipient_metadata_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "status: completed" "$RECIPIENT_METADATA_PLAN" ||
+  ! grep -Fq "make check" "$RECIPIENT_METADATA_PLAN" ||
+  ! grep -Fq "hostile mutations were rejected" "$RECIPIENT_METADATA_PLAN"; then
+  printf '%s\n' "Recipient metadata plan must record completed verification." >&2
+  exit 1
+fi
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md" "$ROOT_DIR/AGENTS.md"; do
+  if ! grep -Fq "malformed recipient metadata" "$document"; then
+    printf '%s\n' "$document must document malformed recipient metadata rejection." >&2
+    exit 1
+  fi
+done
 
 printf '%s\n' "Email Automator maintenance baseline checks passed."

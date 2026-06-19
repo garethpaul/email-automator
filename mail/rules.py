@@ -56,6 +56,8 @@ def configured_from_email():
     return email
 
 def message_addressed_to_automation(msg, target_email=None):
+    if not isinstance(msg, dict):
+        return False
     if target_email is None:
         target = configured_to_email()
     else:
@@ -63,12 +65,18 @@ def message_addressed_to_automation(msg, target_email=None):
     if not target:
         return False
 
-    for recipient in msg.get('to', []):
-        try:
-            address = recipient[1]
-        except (TypeError, IndexError):
+    recipients = msg.get('to') or []
+    if not isinstance(recipients, (list, tuple)):
+        return False
+
+    for recipient in recipients:
+        if not isinstance(recipient, (list, tuple)) or len(recipient) != 2:
             continue
-        if normalize_email_address(address) == target:
+        try:
+            address = normalize_email_address(recipient[1])
+        except AttributeError:
+            continue
+        if address == target:
             return True
     return False
 
@@ -101,14 +109,19 @@ try:
 except NameError:
     STRING_TYPES = (str,)
 
+def text_value(value):
+    if isinstance(value, STRING_TYPES):
+        return value
+    return ""
+
 def bounded_email_body(txt):
-    return (txt or "")[:MAX_EMAIL_BODY_LENGTH]
+    return text_value(txt)[:MAX_EMAIL_BODY_LENGTH]
 
 def tokenize_email(txt):
     return WORD_RE.findall(bounded_email_body(txt))
 
 def reply_subject(subject):
-    normalized = " ".join((subject or "").splitlines()).strip()
+    normalized = " ".join(text_value(subject).splitlines()).strip()
     if len(normalized) > MAX_REPLY_SUBJECT_LENGTH:
         normalized = normalized[:MAX_REPLY_SUBJECT_LENGTH].rstrip()
     if not normalized:
@@ -183,9 +196,11 @@ def release_message_id(msgId):
 
 def approved_sender(msg):
     allowed = set(configured_from_users())
+    automation_address = configured_from_email()
     senders = msg.get('from') or []
     if not isinstance(senders, (list, tuple)):
         return None
+    normalized_senders = []
     for sender in senders:
         if not isinstance(sender, (list, tuple)) or len(sender) != 2:
             continue
@@ -194,8 +209,16 @@ def approved_sender(msg):
             normalized_address = normalize_email_address(address)
         except AttributeError:
             continue
-        if normalized_address in allowed:
-            return address
+        normalized_senders.append((normalized_address, address))
+
+    if len(normalized_senders) != 1:
+        return None
+
+    normalized_address, address = normalized_senders[0]
+    if automation_address and normalized_address == automation_address:
+        return None
+    if normalized_address in allowed:
+        return address
     return None
 
 def valid_email(msg, user_id):

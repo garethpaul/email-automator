@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 import unittest
 
@@ -8,7 +9,15 @@ def choose_first(options):
     return options[0]
 
 
-class RuleTests(unittest.TestCase):
+class CompatibleTestCase(unittest.TestCase):
+    if not hasattr(unittest.TestCase, "subTest"):
+        @contextmanager
+        def subTest(self, **params):
+            del params
+            yield
+
+
+class RuleTests(CompatibleTestCase):
     def setUp(self):
         self._original_env = {
             "AUTOMATION_APPROVED_SENDERS": os.environ.get("AUTOMATION_APPROVED_SENDERS"),
@@ -47,6 +56,13 @@ class RuleTests(unittest.TestCase):
 
         self.assertEqual([], rules.tokenize_email(body))
 
+    def test_rule_matching_treats_malformed_body_values_as_empty(self):
+        for body in (None, 42, [], {}, object()):
+            with self.subTest(body=body):
+                self.assertEqual([], rules.tokenize_email(body))
+                reply = rules.parse_email(body, chooser=choose_first)
+                self.assertIn(rules.unknown[0], reply)
+
     def test_reply_subject_removes_header_breaks(self):
         subject = rules.reply_subject("Coffee\r\nBcc: attacker@example.com")
 
@@ -59,6 +75,11 @@ class RuleTests(unittest.TestCase):
         subject = rules.reply_subject("x" * (rules.MAX_REPLY_SUBJECT_LENGTH + 20))
 
         self.assertEqual(4 + rules.MAX_REPLY_SUBJECT_LENGTH, len(subject))
+
+    def test_reply_subject_treats_malformed_values_as_empty(self):
+        for subject in (None, 42, [], {}, object()):
+            with self.subTest(subject=subject):
+                self.assertEqual("Re:", rules.reply_subject(subject))
 
     def test_approved_sender_returns_allowed_address(self):
         msg = {"from": [("Allowed", "approveduser@approveduser.com")]}
@@ -83,6 +104,65 @@ class RuleTests(unittest.TestCase):
 
         self.assertIsNone(rules.approved_sender(old_sender))
         self.assertEqual("new@example.com", rules.approved_sender(new_sender))
+
+    def test_approved_sender_rejects_configured_automation_address(self):
+        os.environ["AUTOMATION_APPROVED_SENDERS"] = (
+            "robot@example.com, approveduser@approveduser.com"
+        )
+        os.environ["AUTOMATION_FROM_EMAIL"] = "  Robot@Example.com  "
+        self_message = {
+            "from": [("Robot", "ROBOT@example.com")]
+        }
+        allowed_message = {
+            "from": [("Allowed", "approveduser@approveduser.com")]
+        }
+
+        self.assertIsNone(rules.approved_sender(self_message))
+        self.assertEqual(
+            "approveduser@approveduser.com",
+            rules.approved_sender(allowed_message),
+        )
+
+    def test_approved_sender_fails_closed_when_self_address_precedes_allowed_address(self):
+        os.environ["AUTOMATION_APPROVED_SENDERS"] = (
+            "robot@example.com, approveduser@approveduser.com"
+        )
+        os.environ["AUTOMATION_FROM_EMAIL"] = "robot@example.com"
+        msg = {
+            "from": [
+                ("Robot", "robot@example.com"),
+                ("Allowed", "approveduser@approveduser.com"),
+            ]
+        }
+
+        self.assertIsNone(rules.approved_sender(msg))
+
+    def test_approved_sender_fails_closed_when_self_address_follows_allowed_address(self):
+        os.environ["AUTOMATION_APPROVED_SENDERS"] = (
+            "robot@example.com, approveduser@approveduser.com"
+        )
+        os.environ["AUTOMATION_FROM_EMAIL"] = "robot@example.com"
+        msg = {
+            "from": [
+                ("Allowed", "approveduser@approveduser.com"),
+                ("Robot", "robot@example.com"),
+            ]
+        }
+
+        self.assertIsNone(rules.approved_sender(msg))
+
+    def test_approved_sender_refreshes_automation_address(self):
+        os.environ["AUTOMATION_APPROVED_SENDERS"] = "first@example.com, second@example.com"
+        first = {"from": [("First", "first@example.com")]}
+        second = {"from": [("Second", "second@example.com")]}
+
+        os.environ["AUTOMATION_FROM_EMAIL"] = "first@example.com"
+        self.assertIsNone(rules.approved_sender(first))
+        self.assertEqual("second@example.com", rules.approved_sender(second))
+
+        os.environ["AUTOMATION_FROM_EMAIL"] = "second@example.com"
+        self.assertEqual("first@example.com", rules.approved_sender(first))
+        self.assertIsNone(rules.approved_sender(second))
 
     def test_approved_sender_rejects_unknown_address(self):
         msg = {"from": [("Unknown", "stranger@example.com")]}
@@ -126,6 +206,24 @@ class RuleTests(unittest.TestCase):
             "ApprovedUser@ApprovedUser.com",
             rules.approved_sender(msg),
         )
+
+    def test_approved_sender_rejects_duplicate_valid_entries(self):
+        msg = {
+            "from": [
+                ("Allowed", "approveduser@approveduser.com"),
+                ("Duplicate", "approveduser@approveduser.com"),
+            ]
+        }
+
+        self.assertIsNone(rules.approved_sender(msg))
+
+    def test_approved_sender_rejects_mixed_valid_entries_in_any_order(self):
+        allowed = ("Allowed", "approveduser@approveduser.com")
+        unknown = ("Unknown", "stranger@example.com")
+
+        for senders in ([allowed, unknown], [unknown, allowed]):
+            with self.subTest(senders=senders):
+                self.assertIsNone(rules.approved_sender({"from": senders}))
 
     def test_configured_from_users_reads_environment(self):
         original_value = os.environ.get("AUTOMATION_APPROVED_SENDERS")
@@ -212,6 +310,26 @@ class RuleTests(unittest.TestCase):
         msg = {"to": [("automation@example.com", "other@example.com")]}
 
         self.assertFalse(rules.message_addressed_to_automation(msg, "automation@example.com"))
+
+    def test_message_addressed_to_automation_rejects_malformed_containers(self):
+        self.assertFalse(rules.message_addressed_to_automation(None, "automation@example.com"))
+        self.assertFalse(
+            rules.message_addressed_to_automation(
+                {"to": "automation@example.com"}, "automation@example.com"
+            )
+        )
+
+    def test_message_addressed_to_automation_skips_malformed_addresses(self):
+        msg = {
+            "to": [
+                None,
+                ("Only",),
+                ("Malformed", object()),
+                ("Automation", "Automation@Example.com"),
+            ]
+        }
+
+        self.assertTrue(rules.message_addressed_to_automation(msg, "automation@example.com"))
 
     def test_cache_check_allows_when_memcache_unavailable(self):
         original_memcache = rules.memcache
@@ -376,6 +494,46 @@ class RuleTests(unittest.TestCase):
 
         self.assertEqual([], sent)
 
+    def test_valid_email_rejects_malformed_recipient_metadata_without_side_effects(self):
+        sent = []
+        original_send = rules.sendEmail
+        rules.sendEmail = lambda *args: sent.append(args) or True
+        msg = {
+            "from": [("Allowed", "approveduser@approveduser.com")],
+            "to": object(),
+            "msgId": "malformed-recipient-message",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+        try:
+            self.assertFalse(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual([], sent)
+        self.assertTrue(rules.cache_check("malformed-recipient-message"))
+
+    def test_valid_email_rejects_automation_sender_before_reservation(self):
+        os.environ["AUTOMATION_APPROVED_SENDERS"] = "robot@example.com"
+        os.environ["AUTOMATION_FROM_EMAIL"] = "robot@example.com"
+        sent = []
+        original_send = rules.sendEmail
+        rules.sendEmail = lambda *args: sent.append(args) or True
+        msg = {
+            "from": [("Robot", "robot@example.com")],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "self-generated-message",
+            "subject": "Re: Coffee",
+            "payload": "Automated reply",
+        }
+        try:
+            self.assertFalse(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual([], sent)
+        self.assertTrue(rules.cache_check("self-generated-message"))
+
     def test_valid_email_rejects_malformed_sender_metadata_without_side_effects(self):
         sent = []
         original_send = rules.sendEmail
@@ -394,6 +552,28 @@ class RuleTests(unittest.TestCase):
 
         self.assertEqual([], sent)
         self.assertTrue(rules.cache_check("malformed-sender-message"))
+
+    def test_valid_email_rejects_ambiguous_sender_metadata_without_side_effects(self):
+        sent = []
+        original_send = rules.sendEmail
+        rules.sendEmail = lambda *args: sent.append(args) or True
+        msg = {
+            "from": [
+                ("Allowed", "approveduser@approveduser.com"),
+                ("Unknown", "stranger@example.com"),
+            ],
+            "to": [("Automation", "myemail@myemail.com")],
+            "msgId": "ambiguous-sender-message",
+            "subject": "Coffee",
+            "payload": "Please ask Gareth",
+        }
+        try:
+            self.assertFalse(rules.valid_email(msg, "user-id"))
+        finally:
+            rules.sendEmail = original_send
+
+        self.assertEqual([], sent)
+        self.assertTrue(rules.cache_check("ambiguous-sender-message"))
 
     def test_valid_email_rejects_invalid_from_email(self):
         os.environ["AUTOMATION_FROM_EMAIL"] = "robot@example.com\r\nBcc: attacker@example.com"
