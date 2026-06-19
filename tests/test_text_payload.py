@@ -65,6 +65,22 @@ class TextPayloadTests(unittest.TestCase):
 
         self.assertEqual(TEXT_PAYLOAD.decode_text_payload(part), "")
 
+    def test_decoded_payload_is_bounded_before_text_parsing(self):
+        part = FakePart(b"0123456789", charset="ascii")
+
+        self.assertEqual(
+            TEXT_PAYLOAD.decode_text_payload(part, max_bytes=4),
+            "0123",
+        )
+
+    def test_unicode_payload_is_bounded_without_splitting_code_points(self):
+        part = FakePart(None, raw_payload="café012345")
+
+        self.assertEqual(
+            TEXT_PAYLOAD.decode_text_payload(part, max_bytes=4),
+            "caf",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -67,12 +67,17 @@ for path in \
   "mail/body_parts.py" \
   "mail/check.py" \
   "mail/list.py" \
+  "mail/mime_parser.py" \
   "mail/raw_message.py" \
+  "mail/reply_message.py" \
   "mail/rules.py" \
   "mail/text_payload.py" \
-  "tests/test_rules.py" \
   "tests/test_body_parts.py" \
+  "tests/test_integration_contracts.py" \
+  "tests/test_mime_parser.py" \
   "tests/test_raw_message.py" \
+  "tests/test_reply_message.py" \
+  "tests/test_rules.py" \
   "tests/test_text_payload.py" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
@@ -243,8 +248,8 @@ for inline_body_contract in \
   fi
 done
 
-body_selector=$(sed -n '/def select_inline_body_parts(message):/,/^    collect(message)$/p' "$ROOT_DIR/mail/body_parts.py")
-encapsulated_guard_line=$(printf '%s\n' "$body_selector" | grep -nF 'if content_type == "message/rfc822":' | cut -d: -f1)
+body_selector=$(sed -n '/def select_inline_body_parts(message):/,$p' "$ROOT_DIR/mail/body_parts.py")
+encapsulated_guard_line=$(printf '%s\n' "$body_selector" | grep -nF 'if part.get_content_maintype() == "message":' | cut -d: -f1)
 multipart_traversal_line=$(printf '%s\n' "$body_selector" | grep -nF 'if part.is_multipart():' | cut -d: -f1)
 if [ -z "$encapsulated_guard_line" ] || [ -z "$multipart_traversal_line" ] || \
   [ "$encapsulated_guard_line" -ge "$multipart_traversal_line" ]; then
@@ -271,15 +276,54 @@ for related_root_contract in \
   'child.get("Content-ID")' \
   'content_type == "multipart/related"' \
   'root = _related_root(part)' \
-  'if root is not None:' \
+  'if root is None:' \
+  'if len(matches) != 1:' \
   'test_related_without_start_traverses_only_first_child' \
   'test_related_start_selects_matching_content_id' \
-  'test_related_with_unresolved_start_fails_closed'; do
+  'test_related_with_unresolved_start_fails_closed' \
+  'test_related_with_duplicate_root_content_ids_fails_closed'; do
   if ! grep -Fq "$related_root_contract" "$ROOT_DIR/mail/body_parts.py" "$ROOT_DIR/tests/test_body_parts.py"; then
     printf '%s\n' "Related multipart root contract is missing: $related_root_contract" >&2
     exit 1
   fi
 done
+
+for hostile_mime_contract in \
+  'MAX_MIME_DEPTH = 64' \
+  'MAX_MIME_PARTS = 256' \
+  'if depth > MAX_MIME_DEPTH or part_count > MAX_MIME_PARTS:' \
+  'test_rejects_descendants_of_message_global_parts' \
+  'test_excessive_mime_nesting_fails_closed' \
+  'test_excessive_mime_part_count_fails_closed' \
+  'def parse_raw_mime(raw_message):' \
+  'except (TypeError, ValueError, RuntimeError):' \
+  'test_recursion_exhaustion_fails_closed'; do
+  if ! grep -Fq "$hostile_mime_contract" "$ROOT_DIR/mail/body_parts.py" "$ROOT_DIR/mail/mime_parser.py" "$ROOT_DIR/tests/test_body_parts.py" "$ROOT_DIR/tests/test_mime_parser.py"; then
+    printf '%s\n' "Hostile MIME boundary contract is missing: $hostile_mime_contract" >&2
+    exit 1
+  fi
+done
+
+for reply_message_contract in \
+  'def encode_raw_message(raw_message):' \
+  'base64.urlsafe_b64encode(raw_message)' \
+  'def _safe_header(value):' \
+  'if "\r" in value or "\n" in value or "\x00" in value:' \
+  'def create_message(sender, recipient, subject, message_text):' \
+  'return create_message(sender, to, subject, message_text)' \
+  'test_raw_message_encoding_uses_base64url_alphabet' \
+  'test_rejects_injected_reply_headers' \
+  'test_send_module_delegates_reply_encoding_to_guarded_helper'; do
+  if ! grep -Fq "$reply_message_contract" "$ROOT_DIR/mail/reply_message.py" "$ROOT_DIR/mail/send.py" "$ROOT_DIR/tests/test_reply_message.py" "$ROOT_DIR/tests/test_integration_contracts.py"; then
+    printf '%s\n' "Reply message construction contract is missing: $reply_message_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq 'base64.b64encode(message.as_string())' "$ROOT_DIR/mail/send.py"; then
+  printf '%s\n' "Gmail replies must use canonical base64url encoding." >&2
+  exit 1
+fi
 
 related_guard_line=$(printf '%s\n' "$body_selector" | grep -nF 'if content_type == "multipart/related":' | cut -d: -f1)
 if [ -z "$related_guard_line" ] || [ -z "$multipart_traversal_line" ] || \
@@ -370,6 +414,8 @@ for mime_decoder_contract in \
   'payload.decode(charset, errors="replace")' \
   'except (LookupError, TypeError):' \
   'payload.decode("utf-8", errors="replace")' \
+  'MAX_TEXT_PAYLOAD_BYTES = 1024 * 1024' \
+  'payload = payload[:max_bytes]' \
   'decode_text_payload(html[0])' \
   'decode_text_payload(text[0])'; do
   if ! grep -Fq "$mime_decoder_contract" "$ROOT_DIR/mail/text_payload.py" "$ROOT_DIR/mail/list.py"; then
@@ -384,7 +430,9 @@ for mime_test_contract in \
   "test_unknown_charset_uses_utf8_replacement" \
   "test_malformed_declared_charset_bytes_are_replaced" \
   "test_string_payload_is_preserved" \
-  "test_absent_payload_becomes_empty_text"; do
+  "test_absent_payload_becomes_empty_text" \
+  "test_decoded_payload_is_bounded_before_text_parsing" \
+  "test_unicode_payload_is_bounded_without_splitting_code_points"; do
   if ! grep -Fq "$mime_test_contract" "$ROOT_DIR/tests/test_text_payload.py"; then
     printf '%s\n' "MIME decoder test contract is missing: $mime_test_contract" >&2
     exit 1
@@ -592,7 +640,7 @@ for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.
   fi
 done
 
-(cd "$ROOT_DIR" && python3 -m py_compile mail/rules.py tests/test_rules.py)
+(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)
 (cd "$ROOT_DIR" && python3 -m unittest discover -s tests -p "test*.py")
 
 if command -v python2 >/dev/null 2>&1; then
@@ -601,6 +649,9 @@ if command -v python2 >/dev/null 2>&1; then
     "$ROOT_DIR/mail/auth.py" \
     "$ROOT_DIR/mail/check.py" \
     "$ROOT_DIR/mail/list.py" \
+    "$ROOT_DIR/mail/mime_parser.py" \
+    "$ROOT_DIR/mail/raw_message.py" \
+    "$ROOT_DIR/mail/reply_message.py" \
     "$ROOT_DIR/mail/rules.py"
 else
   printf '%s\n' "Skipping Python 2 syntax check: python2 is not installed."
@@ -648,8 +699,11 @@ if ! grep -Fq "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" "$CI_W
   ! grep -Fq "dependency-audit:" "$CI_WORKFLOW" ||
   ! grep -Fq "python -m pip install pip-audit==2.10.0" "$CI_WORKFLOW" ||
   ! grep -Fq "pip-audit --disable-pip --no-deps -r requirements.txt" "$CI_WORKFLOW" ||
-  [ "$(grep -Fc 'persist-credentials: false' "$CI_WORKFLOW")" -ne 2 ] ||
-  [ "$(grep -Fc 'runs-on: ubuntu-24.04' "$CI_WORKFLOW")" -ne 2 ] ||
+  [ "$(grep -Fc 'persist-credentials: false' "$CI_WORKFLOW")" -ne 3 ] ||
+  [ "$(grep -Fc 'runs-on: ubuntu-24.04' "$CI_WORKFLOW")" -ne 3 ] ||
+  ! grep -Fq 'legacy-python2:' "$CI_WORKFLOW" ||
+  ! grep -Fq 'image: python:2.7.18@sha256:' "$CI_WORKFLOW" ||
+  ! grep -Fq 'python -m unittest discover -s tests -p "test*.py"' "$CI_WORKFLOW" ||
   ! grep -Fq "permissions:" "$CI_WORKFLOW" ||
   ! grep -Fq "contents: read" "$CI_WORKFLOW" ||
   ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
@@ -772,12 +826,13 @@ if ! grep -Fq 'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DI
   ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$ROOT_DIR/Makefile" ||
   ! grep -Fq 'cd "$(ROOT)" && $(PYTHON) -m unittest discover' "$ROOT_DIR/Makefile" ||
   ! grep -Fq '"$(ROOT)/mail/rules.py"' "$ROOT_DIR/Makefile" ||
-  ! grep -Fq '"$(ROOT)/tests/test_text_payload.py"' "$ROOT_DIR/Makefile"; then
+  ! grep -Fq '"$(ROOT)/mail/reply_message.py"' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq '"$(ROOT)/tests/test_reply_message.py"' "$ROOT_DIR/Makefile"; then
   printf '%s\n' "Makefile verification commands must resolve paths from the loaded Makefile." >&2
   exit 1
 fi
 
-if ! grep -Eq '^\(cd "\$ROOT_DIR" && python3 -m py_compile mail/rules\.py tests/test_rules\.py\)$' "$ROOT_DIR/scripts/check-baseline.sh" ||
+if ! grep -Fq '(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)' "$ROOT_DIR/scripts/check-baseline.sh" ||
   ! grep -Eq '^\(cd "\$ROOT_DIR" && python3 -m unittest discover -s tests -p "test\*\.py"\)$' "$ROOT_DIR/scripts/check-baseline.sh"; then
   printf '%s\n' "Baseline checker Python probes must run from the repository root." >&2
   exit 1

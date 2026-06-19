@@ -71,6 +71,12 @@
 - Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed.
 - Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
 - Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
+- MIME body traversal fails closed on excessive depth or part counts, ambiguous
+  multipart/related roots, and all encapsulated message media types.
+- Decoded MIME text is bounded before HTML or rule parsing, and parser recursion
+  failures drop the message without aborting the mailbox scan.
+- Outbound replies use Gmail base64url encoding and reject line-breaking header
+  values before MIME construction.
 - Normalize and bound Gmail message IDs before using them in memcache keys. Reserve each ID atomically before sending, and release the reservation when a send fails so a later retry can proceed.
 - Keep Gmail message IDs distinct from thread IDs: message IDs identify MIME fetches and parsed-message cache entries.
 - `APP_DEBUG` must remain off by default and should only be enabled explicitly for local debugging.

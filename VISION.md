@@ -65,6 +65,11 @@ Current baseline:
   named file parts are excluded.
 - Encapsulated message descendants are excluded from automated reply content.
 - Multipart/related resources are excluded from automated reply content; only the MIME-defined root is traversed.
+- MIME traversal and decoded-text extraction remain explicitly bounded, and
+  ambiguous or recursively hostile messages fail closed without affecting the
+  rest of the mailbox scan.
+- Reply construction owns Gmail base64url serialization and header-injection
+  rejection at one dependency-free boundary.
 - Outbound automation From addresses are validated before generated Gmail
   messages are created.
 - The core `valid_email` send decision also requires the message to be

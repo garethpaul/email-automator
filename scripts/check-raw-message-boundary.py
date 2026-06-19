@@ -51,13 +51,17 @@ contracts = (
     "message = service.users().messages().get",
     "msg_str = decode_raw_message(message.get('raw'))",
     "except ValueError:",
-    "return None",
-    "msg = message_from_string(msg_str)",
+    "msg = parse_raw_mime(msg_str)",
+    "if msg is None:",
 )
 for contract in contracts:
     if handler.count(contract) != 1:
         raise SystemExit(f"GetMimeMessage must contain one {contract!r}.")
 if not all(handler.index(a) < handler.index(b) for a, b in zip(contracts, contracts[1:])):
     raise SystemExit("GetMimeMessage must contain invalid raw data before MIME parsing.")
+raw_failure = handler.index("except ValueError:")
+parser_call = handler.index("msg = parse_raw_mime(msg_str)")
+if handler.find("return None", raw_failure, parser_call) == -1:
+    raise SystemExit("Invalid raw Gmail data must fail closed before MIME parsing.")
 
 print("Raw Gmail MIME boundary checks passed.")

@@ -182,6 +182,67 @@ Content-ID: <second>
 
         self.assertEqual(selected_payloads(raw), ([], []))
 
+    def test_related_with_duplicate_root_content_ids_fails_closed(self):
+        raw = """Content-Type: multipart/related; boundary=related; start="<root@message>"
+
+--related
+Content-Type: text/plain
+Content-ID: <root@message>
+
+first candidate
+--related
+Content-Type: text/html
+Content-ID: <root@message>
+
+<p>second candidate</p>
+--related--
+"""
+
+        self.assertEqual(selected_payloads(raw), ([], []))
+
+    def test_rejects_descendants_of_message_global_parts(self):
+        raw = """Content-Type: multipart/mixed; boundary=outer
+
+--outer
+Content-Type: text/plain
+
+real body
+--outer
+Content-Type: message/global
+
+Content-Type: text/html
+
+<p>encapsulated override</p>
+--outer--
+"""
+
+        self.assertEqual(selected_payloads(raw), ([], ["real body"]))
+
+    def test_excessive_mime_nesting_fails_closed(self):
+        depth = 70
+        chunks = []
+        for index in range(depth):
+            boundary = "level-%d" % index
+            chunks.append(
+                "Content-Type: multipart/mixed; boundary=%s\n\n--%s\n"
+                % (boundary, boundary)
+            )
+        chunks.append("Content-Type: text/plain\n\nuntrusted deep body\n")
+        for index in reversed(range(depth)):
+            chunks.append("--level-%d--\n" % index)
+
+        self.assertEqual(selected_payloads("".join(chunks)), ([], []))
+
+    def test_excessive_mime_part_count_fails_closed(self):
+        chunks = ["Content-Type: multipart/mixed; boundary=body\n\n"]
+        for index in range(260):
+            chunks.append(
+                "--body\nContent-Type: text/plain\n\npart %d\n" % index
+            )
+        chunks.append("--body--\n")
+
+        self.assertEqual(selected_payloads("".join(chunks)), ([], []))
+
 
 if __name__ == "__main__":
     unittest.main()

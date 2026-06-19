@@ -1,7 +1,6 @@
 """Send an email message from the user's account.
 """
 
-import base64
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
@@ -19,6 +18,10 @@ from apiclient import errors
 http = httplib2.Http(memcache)
 service = build("gmail", "v1", http=http)
 import auth
+try:
+  from .reply_message import create_message
+except (ImportError, ValueError):
+  from reply_message import create_message
 
 def SendMessage(user_id, message):
   """Send an email message.
@@ -52,8 +55,4 @@ def CreateMessage(sender, to, subject, message_text):
   Returns:
     An object containing a base64 encoded email object.
   """
-  message = MIMEText(message_text)
-  message['to'] = to
-  message['from'] = sender
-  message['subject'] = subject
-  return {'raw': base64.b64encode(message.as_string())}
+  return create_message(sender, to, subject, message_text)

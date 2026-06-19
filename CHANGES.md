@@ -1,5 +1,15 @@
 # Changes
 
+## 2026-06-19
+
+- Bounded MIME traversal depth, MIME part count, and decoded text extraction.
+- Rejected duplicate multipart/related roots and all encapsulated `message/*`
+  descendants from automated reply content.
+- Converted parser recursion and missing-safe-body failures into per-message
+  rejection so one hostile message cannot abort the mailbox scan.
+- Centralized reply construction with Gmail base64url serialization and CR/LF/
+  NUL header rejection.
+
 ## 2026-06-16
 
 - Encapsulated message descendants are excluded from automated reply content.

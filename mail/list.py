@@ -11,6 +11,10 @@ try:
     from .raw_message import decode_raw_message
 except (ImportError, ValueError):
     from raw_message import decode_raw_message
+try:
+    from .mime_parser import parse_raw_mime
+except (ImportError, ValueError):
+    from mime_parser import parse_raw_mime
 from database import default
 
 # Get Libs from Sys
@@ -29,7 +33,6 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
-from email import message_from_string
 from email.mime.text import MIMEText
 from email.Utils import parseaddr
 from email.Header import decode_header
@@ -208,7 +211,9 @@ def GetMimeMessage(service, user_id, msg_id):
         msg_str = decode_raw_message(message.get('raw'))
     except ValueError:
         return None
-    msg = message_from_string(msg_str)
+    msg = parse_raw_mime(msg_str)
+    if msg is None:
+        return None
     subject=getmailheader(msg.get('Subject', ''))
     data["subject"] = subject
     from_ = getmailaddresses(msg, 'from')
@@ -225,7 +230,7 @@ def GetMimeMessage(service, user_id, msg_id):
     elif text:
         data["payload"] = decode_text_payload(text[0])
     else:
-        raise Exception('No suitable part found')
+        return None
     return data
 
   except errors.HttpError, error:

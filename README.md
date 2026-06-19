@@ -2,6 +2,12 @@
 
 Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
 Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
+MIME traversal is depth- and part-count-bounded, rejects ambiguous related
+roots and encapsulated `message/*` descendants, and drops parser recursion
+failures instead of aborting the mailbox scan. Decoded text parts are capped
+before HTML extraction or reply-rule parsing. Outbound Gmail replies use
+base64url encoding and reject CR, LF, and NUL in sender, recipient, and subject
+headers before MIME construction.
 
 <!-- README-OVERVIEW-IMAGE -->
 ![Project overview](docs/readme-overview.svg)
