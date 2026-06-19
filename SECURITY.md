@@ -8,6 +8,9 @@ Parser recursion and messages without a safe inline body fail closed without
 aborting the remaining mailbox scan. Reply MIME construction uses Gmail
 base64url encoding and rejects CR, LF, and NUL in sender, recipient, and subject
 fields.
+The vendored httplib2 TLS wrapper explicitly selects `PROTOCOL_TLS`; its WSSE
+UsernameToken SHA-1 operation remains protocol-defined challenge construction,
+not password storage or a password-verification hash.
 
 ## Supported Versions
 

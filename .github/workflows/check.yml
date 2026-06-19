@@ -55,6 +55,7 @@ jobs:
       - run: >-
           python -m py_compile
           main.py
+          libs/httplib2/__init__.py
           mail/auth.py
           mail/body_parts.py
           mail/check.py
@@ -65,3 +66,4 @@ jobs:
           mail/rules.py
           mail/send.py
           mail/text_payload.py
+          tests/test_legacy_httplib2_security.py
