@@ -829,13 +829,13 @@ if ! grep -Fq "build:" "$ROOT_DIR/Makefile" ||
   exit 1
 fi
 
-if ! grep -Fq 'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DIR/Makefile" ||
+if ! grep -Fq 'override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DIR/Makefile" ||
   ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$ROOT_DIR/Makefile" ||
   ! grep -Fq 'cd "$(ROOT)" && $(PYTHON) -m unittest discover' "$ROOT_DIR/Makefile" ||
   ! grep -Fq '"$(ROOT)/mail/rules.py"' "$ROOT_DIR/Makefile" ||
   ! grep -Fq '"$(ROOT)/mail/reply_message.py"' "$ROOT_DIR/Makefile" ||
   ! grep -Fq '"$(ROOT)/tests/test_reply_message.py"' "$ROOT_DIR/Makefile"; then
-  printf '%s\n' "Makefile verification commands must resolve paths from the loaded Makefile." >&2
+  printf '%s\n' "Makefile verification commands must protect and resolve paths from the loaded Makefile." >&2
   exit 1
 fi
 
