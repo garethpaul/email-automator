@@ -28,6 +28,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: make check
+        env:
+          PYTHON: python
+          PYTHON2: "-"
+          PYTHON3: python
+          PYTHON314: python3.14
 
   dependency-audit:
     runs-on: ubuntu-24.04
@@ -53,17 +58,5 @@ jobs:
           persist-credentials: false
       - run: python -m unittest discover -s tests -p "test*.py"
       - run: >-
-          python -m py_compile
-          main.py
-          libs/httplib2/__init__.py
-          mail/auth.py
-          mail/body_parts.py
-          mail/check.py
-          mail/list.py
-          mail/mime_parser.py
-          mail/raw_message.py
-          mail/reply_message.py
-          mail/rules.py
-          mail/send.py
-          mail/text_payload.py
-          tests/test_legacy_httplib2_security.py
+          python scripts/verify-python-surface.py
+          . scripts/python-surface-scopes.txt python -

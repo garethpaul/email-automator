@@ -2,6 +2,8 @@
 
 override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PYTHON ?= python3
+PYTHON2 ?= python2
+PYTHON3 ?= python3
 
 lint:
 	"$(ROOT)/scripts/check-baseline.sh"
@@ -10,7 +12,7 @@ test:
 	cd "$(ROOT)" && $(PYTHON) -m unittest discover -s tests -p "test*.py"
 
 build:
-	$(PYTHON) -m py_compile "$(ROOT)/mail/body_parts.py" "$(ROOT)/mail/mime_parser.py" "$(ROOT)/mail/raw_message.py" "$(ROOT)/mail/reply_message.py" "$(ROOT)/mail/rules.py" "$(ROOT)/mail/text_payload.py" "$(ROOT)/tests/test_body_parts.py" "$(ROOT)/tests/test_integration_contracts.py" "$(ROOT)/tests/test_legacy_httplib2_security.py" "$(ROOT)/tests/test_mime_parser.py" "$(ROOT)/tests/test_raw_message.py" "$(ROOT)/tests/test_reply_message.py" "$(ROOT)/tests/test_rules.py" "$(ROOT)/tests/test_text_payload.py"
+	$(PYTHON) "$(ROOT)/scripts/verify-python-surface.py" "$(ROOT)" "$(ROOT)/scripts/python-surface-scopes.txt" "$(PYTHON2)" "$(PYTHON3)"
 
 verify: lint test build
 

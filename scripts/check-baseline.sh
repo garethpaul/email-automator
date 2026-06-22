@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 CHECK_PLAN="$ROOT_DIR/docs/plans/2026-06-08-email-check-wrapper.md"
 VALID_EMAIL_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-valid-email-recipient-guard.md"
 SUBJECT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-email-reply-subject-normalization.md"
@@ -34,11 +34,22 @@ RELATED_ROOT_PLAN="$ROOT_DIR/docs/plans/2026-06-16-related-multipart-root-bounda
 DEPENDENCY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-patched-legacy-runtime-requirements.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 REQUIREMENTS="$ROOT_DIR/requirements.txt"
+selected_python=${PYTHON:-python3}
+selected_python2=${PYTHON2:-python2}
+selected_python3=${PYTHON3:-python3}
+
+runtime_available() {
+  [ "$1" != "-" ] && command -v "$1" >/dev/null 2>&1 && "$1" -c 'import sys' >/dev/null 2>&1
+}
+
+if ! runtime_available "$selected_python"; then
+  printf '%s\n' "Selected Python controller is unavailable: $selected_python" >&2
+  exit 1
+fi
 
 cleanup_bytecode() {
-  find "$ROOT_DIR" -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
-  find "$ROOT_DIR/mail" "$ROOT_DIR/tests" -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
-  find "$ROOT_DIR/mail" "$ROOT_DIR/tests" -type f -name "*.pyc" -delete 2>/dev/null || true
+  find "$ROOT_DIR" -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
+  find "$ROOT_DIR" -type f -name "*.pyc" -delete 2>/dev/null || true
 }
 
 trap cleanup_bytecode EXIT
@@ -62,6 +73,8 @@ for path in \
   "app.yaml" \
   "cron.yaml" \
   ".github/workflows/check.yml" \
+  "database/cache.py" \
+  "database/default.py" \
   "main.py" \
   "mail/auth.py" \
   "mail/body_parts.py" \
@@ -73,6 +86,8 @@ for path in \
   "mail/rules.py" \
   "mail/text_payload.py" \
   "tests/test_body_parts.py" \
+  "tests/test_cache.py" \
+  "tests/test_python_surface_authority.py" \
   "tests/test_integration_contracts.py" \
   "tests/test_legacy_httplib2_security.py" \
   "tests/test_mime_parser.py" \
@@ -103,6 +118,9 @@ for path in \
   "docs/plans/2026-06-14-email-automator-runtime-verification.md" \
   "scripts/check-configured-user-id.py" \
   "scripts/check-raw-message-boundary.py" \
+  "scripts/python-surface-scopes.txt" \
+  "scripts/test-python-surface-mutations.py" \
+  "scripts/verify-python-surface.py" \
   "docs/plans/2026-06-15-raw-gmail-mime-boundary.md" \
   "docs/plans/2026-06-15-canonical-gmail-base64url.md" \
   "docs/plans/2026-06-12-patched-legacy-runtime-requirements.md" \
@@ -203,8 +221,8 @@ for runtime_plan_contract in \
   fi
 done
 
-python3 "$CONFIGURED_USER_ID_CHECK" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/mail/check.py"
-python3 "$RAW_MESSAGE_CHECK" "$ROOT_DIR/mail/raw_message.py" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/tests/test_raw_message.py"
+"$selected_python" "$CONFIGURED_USER_ID_CHECK" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/mail/check.py"
+"$selected_python" "$RAW_MESSAGE_CHECK" "$ROOT_DIR/mail/raw_message.py" "$ROOT_DIR/mail/list.py" "$ROOT_DIR/tests/test_raw_message.py"
 
 for raw_message_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   grep -Fq "Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing." "$ROOT_DIR/$raw_message_doc" || exit 1
@@ -647,21 +665,27 @@ for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.
   fi
 done
 
-(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_legacy_httplib2_security.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)
-(cd "$ROOT_DIR" && python3 -m unittest discover -s tests -p "test*.py")
+(cd "$ROOT_DIR" && "$selected_python" scripts/verify-python-surface.py "$ROOT_DIR" "$ROOT_DIR/scripts/python-surface-scopes.txt" "$selected_python2" "$selected_python3")
+(cd "$ROOT_DIR" && "$selected_python" -m unittest discover -s tests -p "test*.py")
 
-if command -v python2 >/dev/null 2>&1; then
-  python2 -m py_compile \
-    "$ROOT_DIR/main.py" \
-    "$ROOT_DIR/mail/auth.py" \
-    "$ROOT_DIR/mail/check.py" \
-    "$ROOT_DIR/mail/list.py" \
-    "$ROOT_DIR/mail/mime_parser.py" \
-    "$ROOT_DIR/mail/raw_message.py" \
-    "$ROOT_DIR/mail/reply_message.py" \
-    "$ROOT_DIR/mail/rules.py"
+if runtime_available "$selected_python2"; then
+  "$selected_python2" "$ROOT_DIR/scripts/verify-python-surface.py" \
+    "$ROOT_DIR" "$ROOT_DIR/scripts/python-surface-scopes.txt" "$selected_python2" "$selected_python3"
 else
-  printf '%s\n' "Skipping Python 2 syntax check: python2 is not installed."
+  printf '%s\n' "Skipping Python 2 syntax check: selected Python 2 is not installed."
+fi
+
+if [ "${SKIP_PYTHON_SURFACE_MUTATIONS:-0}" != 1 ]; then
+  if runtime_available "$selected_python3"; then
+    mutation_runner=$selected_python3
+  elif runtime_available "$selected_python2"; then
+    mutation_runner=$selected_python2
+  else
+    printf '%s\n' "No selected Python runtime is available for mutation tests." >&2
+    exit 1
+  fi
+  PYTHON2=$selected_python2 PYTHON3=$selected_python3 \
+    "$mutation_runner" "$ROOT_DIR/scripts/test-python-surface-mutations.py"
 fi
 
 if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-08-email-rule-baseline.md" ||
@@ -701,6 +725,10 @@ if ! grep -Fq "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" "$CI_W
   ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ${{ matrix.python-version }}' "$CI_WORKFLOW" ||
+  ! grep -Fq 'PYTHON: python' "$CI_WORKFLOW" ||
+  ! grep -Fq 'PYTHON2: "-"' "$CI_WORKFLOW" ||
+  ! grep -Fq 'PYTHON3: python' "$CI_WORKFLOW" ||
+  ! grep -Fq 'PYTHON314: python3.14' "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: "3.12"' "$CI_WORKFLOW" ||
   ! grep -Fq "run: make check" "$CI_WORKFLOW" ||
   ! grep -Fq "dependency-audit:" "$CI_WORKFLOW" ||
@@ -829,19 +857,33 @@ if ! grep -Fq "build:" "$ROOT_DIR/Makefile" ||
   exit 1
 fi
 
+EXPECTED_COMPILE_RECIPE=$(printf '\t%s' '$(PYTHON) "$(ROOT)/scripts/verify-python-surface.py" "$(ROOT)" "$(ROOT)/scripts/python-surface-scopes.txt" "$(PYTHON2)" "$(PYTHON3)"')
+
 if ! grep -Fq 'override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DIR/Makefile" ||
   ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$ROOT_DIR/Makefile" ||
   ! grep -Fq 'cd "$(ROOT)" && $(PYTHON) -m unittest discover' "$ROOT_DIR/Makefile" ||
-  ! grep -Fq '"$(ROOT)/mail/rules.py"' "$ROOT_DIR/Makefile" ||
-  ! grep -Fq '"$(ROOT)/mail/reply_message.py"' "$ROOT_DIR/Makefile" ||
-  ! grep -Fq '"$(ROOT)/tests/test_reply_message.py"' "$ROOT_DIR/Makefile"; then
+  ! grep -Fxq "$EXPECTED_COMPILE_RECIPE" "$ROOT_DIR/Makefile"; then
   printf '%s\n' "Makefile verification commands must protect and resolve paths from the loaded Makefile." >&2
   exit 1
 fi
 
-if ! grep -Fq '(cd "$ROOT_DIR" && python3 -m py_compile mail/body_parts.py mail/mime_parser.py mail/raw_message.py mail/reply_message.py mail/rules.py mail/text_payload.py tests/test_body_parts.py tests/test_integration_contracts.py tests/test_legacy_httplib2_security.py tests/test_mime_parser.py tests/test_raw_message.py tests/test_reply_message.py tests/test_rules.py tests/test_text_payload.py)' "$ROOT_DIR/scripts/check-baseline.sh" ||
-  ! grep -Eq '^\(cd "\$ROOT_DIR" && python3 -m unittest discover -s tests -p "test\*\.py"\)$' "$ROOT_DIR/scripts/check-baseline.sh"; then
+if ! grep -Fq '"$selected_python" scripts/verify-python-surface.py "$ROOT_DIR" "$ROOT_DIR/scripts/python-surface-scopes.txt" "$selected_python2" "$selected_python3"' "$ROOT_DIR/scripts/check-baseline.sh" ||
+  ! grep -Eq '^\(cd "\$ROOT_DIR" && "\$selected_python" -m unittest discover -s tests -p "test\*\.py"\)$' "$ROOT_DIR/scripts/check-baseline.sh"; then
   printf '%s\n' "Baseline checker Python probes must run from the repository root." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'return subprocess.call(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0' "$ROOT_DIR/scripts/verify-python-surface.py" ||
+  ! grep -Fq 'compiled = supports(executable, os.path.join(root, path), cfile)' "$ROOT_DIR/scripts/verify-python-surface.py" ||
+  ! grep -Fq 'if family not in required:' "$ROOT_DIR/scripts/verify-python-surface.py" ||
+  ! grep -Fq 'if not compiled:' "$ROOT_DIR/scripts/verify-python-surface.py"; then
+  printf '%s\n' "Python surface compile loop must remain active." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'python scripts/verify-python-surface.py' "$ROOT_DIR/.github/workflows/check.yml" ||
+  ! grep -Fq '. scripts/python-surface-scopes.txt python -' "$ROOT_DIR/.github/workflows/check.yml"; then
+  printf '%s\n' "Legacy Python 2 CI must use the complete Python surface authority." >&2
   exit 1
 fi
 
