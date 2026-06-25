@@ -886,7 +886,8 @@ if ! grep -Fq "status: completed" "$LOCATION_INDEPENDENT_MAKE_PLAN" ||
   exit 1
 fi
 
-if grep -R "dial 911" "$ROOT_DIR/mail" "$ROOT_DIR/tests" >/dev/null; then
+if find "$ROOT_DIR/mail" "$ROOT_DIR/tests" -type f -name "*.py" \
+    -exec grep -Fq "dial 911" {} +; then
   printf '%s\n' "Automated fallback replies must not mention dialing 911." >&2
   exit 1
 fi

@@ -11,6 +11,8 @@
   fixtures copy only tracked or unignored repository files.
 - Cleared inherited Make control variables before isolated runtime checks so
   command-line Python overrides do not leak into their sanitized PATHs.
+- Limited recursive emergency-wording checks to Python source files so ignored
+  bytecode and cache directories cannot affect repository verification.
 - Passed focused authority tests after Codex identified the ignored local
   environment regression.
 
