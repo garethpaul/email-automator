@@ -7,6 +7,8 @@
   required Python 2 and Python 3 runtime families.
 - Updated worktree discovery to honor Git ignore rules while still rejecting
   unignored, undeclared Python source files.
+- Stopped deleting ignored local bytecode during checks and made mutation
+  fixtures copy only tracked or unignored repository files.
 - Passed focused authority tests after Codex identified the ignored local
   environment regression.
 

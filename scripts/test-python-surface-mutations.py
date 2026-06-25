@@ -61,11 +61,24 @@ def run(root, expect_success=False, command=None):
 
 def clone_case(name):
     destination = os.path.join(TEMP_DIR, name)
-    shutil.copytree(
-        ROOT,
-        destination,
-        ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"),
-    )
+    os.mkdir(destination)
+    output = subprocess.check_output([
+        "git", "ls-files", "-z", "--cached", "--others", "--exclude-standard",
+    ], cwd=ROOT)
+    if not isinstance(output, str):
+        output = output.decode("utf-8")
+    for relative in output.split("\0"):
+        if not relative:
+            continue
+        source = os.path.join(ROOT, relative)
+        target = os.path.join(destination, relative)
+        parent = os.path.dirname(target)
+        if not os.path.isdir(parent):
+            os.makedirs(parent)
+        if os.path.islink(source):
+            os.symlink(os.readlink(source), target)
+        else:
+            shutil.copy2(source, target)
     subprocess.check_call(["git", "init", "--quiet", destination])
     subprocess.check_call(["git", "-C", destination, "add", "."])
     return destination
@@ -172,6 +185,21 @@ def isolated_runtime_check(name, python2, python3, python314="", full_make=True)
 
 TEMP_DIR = tempfile.mkdtemp(prefix="email-automator-python-surface.")
 try:
+    ignored_probe = os.path.join(ROOT, "build", "python-surface-ignored-probe.py")
+    ignored_parent_created = not os.path.isdir(os.path.dirname(ignored_probe))
+    if ignored_parent_created:
+        os.makedirs(os.path.dirname(ignored_probe))
+    with open(ignored_probe, "w") as probe_file:
+        probe_file.write("ignored = True\n")
+    try:
+        ignored_case = clone_case("ignored-local-files")
+        if os.path.exists(os.path.join(ignored_case, "build", "python-surface-ignored-probe.py")):
+            raise SystemExit("ignored local Python file was copied into mutation case")
+    finally:
+        os.unlink(ignored_probe)
+        if ignored_parent_created:
+            os.rmdir(os.path.dirname(ignored_probe))
+
     run(ROOT, expect_success=True)
     if available(PYTHON314):
         run(ROOT, expect_success=True, command=[

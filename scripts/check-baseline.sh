@@ -47,13 +47,6 @@ if ! runtime_available "$selected_python"; then
   exit 1
 fi
 
-cleanup_bytecode() {
-  find "$ROOT_DIR" -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
-  find "$ROOT_DIR" -type f -name "*.pyc" -delete 2>/dev/null || true
-}
-
-trap cleanup_bytecode EXIT
-
 require_file() {
   path=$1
   if [ ! -f "$ROOT_DIR/$path" ]; then
