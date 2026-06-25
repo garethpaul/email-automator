@@ -36,20 +36,20 @@ def indexed_python(root):
 def worktree_python(root):
     paths = set()
     root_real = os.path.realpath(root)
-    for directory, names, filenames in os.walk(root):
-        names[:] = [name for name in names if name != ".git"]
-        for filename in filenames:
-            if not filename.endswith(".py"):
-                continue
-            absolute = os.path.join(directory, filename)
-            relative = os.path.relpath(absolute, root)
-            file_mode = os.lstat(absolute).st_mode
-            if not stat.S_ISREG(file_mode):
-                raise SystemExit("Worktree Python path is not a regular file: %s" % relative)
-            target = os.path.realpath(absolute)
-            if target != root_real and not target.startswith(root_real + os.sep):
-                raise SystemExit("Worktree Python path escapes repository: %s" % relative)
-            paths.add(relative)
+    output = command_output([
+        "git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*.py",
+    ], root)
+    for relative in output.split("\0"):
+        if not relative:
+            continue
+        absolute = os.path.join(root, relative)
+        file_mode = os.lstat(absolute).st_mode
+        if not stat.S_ISREG(file_mode):
+            raise SystemExit("Worktree Python path is not a regular file: %s" % relative)
+        target = os.path.realpath(absolute)
+        if target != root_real and not target.startswith(root_real + os.sep):
+            raise SystemExit("Worktree Python path escapes repository: %s" % relative)
+        paths.add(relative)
     return paths
 
 

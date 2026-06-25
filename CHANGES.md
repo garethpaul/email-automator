@@ -1,5 +1,15 @@
 # Changes
 
+## 2026-06-25
+
+- Fixed the tracked cache helper's Python 2/3 syntax and duration forwarding.
+- Added authoritative tracked/deployed Python surface verification across the
+  required Python 2 and Python 3 runtime families.
+- Updated worktree discovery to honor Git ignore rules while still rejecting
+  unignored, undeclared Python source files.
+- Passed focused authority tests after Codex identified the ignored local
+  environment regression.
+
 ## 2026-06-19
 
 - Bounded MIME traversal depth, MIME part count, and decoded text extraction.
