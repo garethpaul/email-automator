@@ -9,6 +9,8 @@
   unignored, undeclared Python source files.
 - Stopped deleting ignored local bytecode during checks and made mutation
   fixtures copy only tracked or unignored repository files.
+- Cleared inherited Make control variables before isolated runtime checks so
+  command-line Python overrides do not leak into their sanitized PATHs.
 - Passed focused authority tests after Codex identified the ignored local
   environment regression.
 

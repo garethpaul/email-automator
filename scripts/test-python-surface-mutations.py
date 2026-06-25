@@ -142,6 +142,8 @@ def isolated_runtime_check(name, python2, python3, python314="", full_make=True)
         link_runtime(isolated_bin, python3, ("python3",))
     link_runtime(isolated_bin, selected, ("python",))
     environment = os.environ.copy()
+    for variable in ("MAKEFLAGS", "MFLAGS", "MAKEOVERRIDES", "GNUMAKEFLAGS", "MAKEFILES"):
+        environment.pop(variable, None)
     environment.update({
         "PATH": isolated_bin,
         "PYTHON": "python",
