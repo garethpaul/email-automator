@@ -167,6 +167,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   or raised send releases its reservation so a later retry can proceed.
 - Gmail message IDs, rather than thread IDs, identify MIME fetches and parsed
   message cache entries; malformed summaries are skipped before either action.
+- Gmail list responses accept only a mapping with a list or tuple of message
+  summaries, preserve the 30-message scan bound, and return an empty iterable
+  for malformed response shapes or handled Gmail HTTP failures.
 - `APP_DEBUG` defaults off; set `APP_DEBUG=1` only for local debugging.
 
 ## Security and Privacy Notes

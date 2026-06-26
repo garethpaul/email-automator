@@ -77,6 +77,7 @@ for path in \
   "mail/body_parts.py" \
   "mail/check.py" \
   "mail/list.py" \
+  "mail/list_response.py" \
   "mail/mime_parser.py" \
   "mail/raw_message.py" \
   "mail/reply_message.py" \
@@ -86,12 +87,15 @@ for path in \
   "tests/test_cache.py" \
   "tests/test_python_surface_authority.py" \
   "tests/test_integration_contracts.py" \
+  "tests/test_list_response.py" \
   "tests/test_legacy_httplib2_security.py" \
   "tests/test_mime_parser.py" \
   "tests/test_raw_message.py" \
   "tests/test_reply_message.py" \
   "tests/test_rules.py" \
   "tests/test_text_payload.py" \
+  "docs/plans/2026-06-25-gmail-list-response-boundary-design.md" \
+  "docs/plans/2026-06-25-gmail-list-response-boundary.md" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
   "docs/plans/2026-06-09-email-outbound-from-address-validation.md" \
@@ -661,6 +665,54 @@ if grep -Fq 'GetMimeMessage(service, user_id, threadId)' "$ROOT_DIR/mail/list.py
   printf '%s\n' "Gmail MIME retrieval and caching must not use threadId as message identity." >&2
   exit 1
 fi
+
+for gmail_list_response_contract in \
+  "def bounded_message_summaries" \
+  'if not isinstance(response, dict):' \
+  'if not isinstance(messages, (list, tuple)):' \
+  "return list(messages[:MAX_MESSAGE_SUMMARIES])" \
+  "from .list_response import bounded_message_summaries" \
+  "for msg in bounded_message_summaries(response):" \
+  "test_malformed_response_shapes_return_empty_list" \
+  "test_messages_are_bounded_to_thirty" \
+  "test_gmail_list_response_is_bounded_and_http_errors_return_empty_list"; do
+  if ! grep -Fq "$gmail_list_response_contract" \
+    "$ROOT_DIR/mail/list_response.py" \
+    "$ROOT_DIR/mail/list.py" \
+    "$ROOT_DIR/tests/test_list_response.py" \
+    "$ROOT_DIR/tests/test_integration_contracts.py"; then
+    printf '%s\n' "Gmail list response boundary is missing: $gmail_list_response_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq "if 'messages' in response:" "$ROOT_DIR/mail/list.py" ||
+  grep -Fq "response['messages']" "$ROOT_DIR/mail/list.py"; then
+  printf '%s\n' "Gmail list handler must not dereference an unvalidated response shape." >&2
+  exit 1
+fi
+
+for gmail_list_document in \
+  "$ROOT_DIR/README.md" \
+  "$ROOT_DIR/SECURITY.md" \
+  "$ROOT_DIR/VISION.md" \
+  "$ROOT_DIR/CHANGES.md" \
+  "$ROOT_DIR/AGENTS.md"; do
+  if ! grep -Fq "Gmail list responses" "$gmail_list_document"; then
+    printf '%s\n' "$gmail_list_document must document the Gmail list response boundary." >&2
+    exit 1
+  fi
+done
+
+for gmail_list_plan in \
+  "$ROOT_DIR/docs/plans/2026-06-25-gmail-list-response-boundary-design.md" \
+  "$ROOT_DIR/docs/plans/2026-06-25-gmail-list-response-boundary.md"; do
+  if ! grep -Fqi "status: completed" "$gmail_list_plan" ||
+    ! grep -Fq "make check" "$gmail_list_plan"; then
+    printf '%s\n' "$gmail_list_plan must record completed make check verification." >&2
+    exit 1
+  fi
+done
 
 for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
   if ! grep -Fq "Gmail message IDs" "$document"; then

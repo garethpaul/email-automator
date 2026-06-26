@@ -1,5 +1,61 @@
 # Changes
 
+## 2026-06-25 21:45 PDT - P1 - Bound Gmail list response shapes
+
+### Summary
+
+Made mailbox scans fail closed with a stable empty iterable when Gmail returns
+a malformed list response or the existing HTTP error boundary is reached.
+
+### Work completed
+
+- Added a dependency-free Python 2/3 helper that accepts only a mapping with a
+  list or tuple `messages` field and preserves the existing 30-message bound.
+- Routed `ListMessagesWithLabels` through the helper before message-ID, cache,
+  MIME, and reply processing.
+- Made the handled Gmail `HttpError` branch return `[]` instead of implicit
+  `None`.
+- Added executable shape regressions, integration contracts, and synchronized
+  repository guidance.
+
+### Threads
+
+- Continued: credential opt-in setup — reviewed and allowed isolated PR #22 to
+  merge before rebasing this runtime change onto its exact master commit.
+
+### Files changed
+
+- `mail/list_response.py` — dependency-free response validation and bound.
+- `mail/list.py` — validated iteration and stable HTTP-error return.
+- `tests/test_list_response.py` and `tests/test_integration_contracts.py` —
+  offline regressions and handler integration contracts.
+- Repository plans, guidance, and baseline contracts — preserve the boundary.
+
+### Validation
+
+- Focused helper tests failed first because the module did not exist.
+- The integration contract then failed on the direct unvalidated response
+  dereference and implicit `None` error return.
+- The full local gate passed with 94 tests and 77 authoritative Python files.
+- The pinned Python 2.7.18 container passed the same 94-test suite with one
+  expected skip and verified all 77 source entries.
+- Hostile removal of the response mapping guard, 30-message bound, and stable
+  HTTP-error iterable were each rejected by focused tests.
+
+### Bugs / findings
+
+- P1: malformed Gmail list responses or handled list HTTP failures could abort
+  cron/mail handlers before per-message fail-closed guards ran.
+
+### Blockers
+
+- Live App Engine, OAuth, Gmail, and memcache behavior remains outside the
+  credential-free offline suite.
+
+### Next action
+
+- Complete mutation, full runtime-matrix, hosted, and exact-head review gates.
+
 ## 2026-06-25
 
 - Added a canonical credential and opt-in guide covering platform credentials,
