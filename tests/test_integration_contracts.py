@@ -14,6 +14,16 @@ def read_source(relative_path):
 
 
 class IntegrationContractTests(unittest.TestCase):
+    def test_gmail_get_response_is_validated_before_raw_message_decoding(self):
+        source = read_source("mail/list.py")
+        handler = source.split("def GetMimeMessage", 1)[1].split(
+            "class Single", 1
+        )[0]
+
+        self.assertIn("from .raw_message import decode_raw_message, gmail_raw_value", source)
+        self.assertIn("decode_raw_message(gmail_raw_value(message))", handler)
+        self.assertNotIn("message.get('raw')", handler)
+
     def test_gmail_list_response_is_bounded_and_http_errors_return_empty_list(self):
         source = read_source("mail/list.py")
         handler = source.split("def ListMessagesWithLabels", 1)[1].split(

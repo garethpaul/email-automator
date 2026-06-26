@@ -81,6 +81,8 @@
 - Keep Gmail message IDs distinct from thread IDs: message IDs identify MIME fetches and parsed-message cache entries.
 - Gmail list responses must pass the dependency-free mapping/list boundary and
   handled Gmail HTTP failures must return an empty iterable to mail handlers.
+- Gmail get responses must pass the dependency-free mapping boundary before raw
+  MIME decoding; malformed containers must drop only that message.
 - `APP_DEBUG` must remain off by default and should only be enabled explicitly for local debugging.
 
 ## Agent workflow

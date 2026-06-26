@@ -21,6 +21,16 @@ else:
 
 
 class RawMessageTests(unittest.TestCase):
+    def test_gmail_raw_value_rejects_malformed_response_shapes(self):
+        for response in (None, [], "raw", 123):
+            self.assertIsNone(RAW_MESSAGE.gmail_raw_value(response))
+
+    def test_gmail_raw_value_returns_mapping_raw_field_unchanged(self):
+        raw = b"U3ViamVjdDogaGVsbG8NCg0KYm9keQ"
+
+        self.assertEqual(raw, RAW_MESSAGE.gmail_raw_value({"raw": raw}))
+        self.assertIsNone(RAW_MESSAGE.gmail_raw_value({}))
+
     def test_decodes_padded_and_unpadded_base64url(self):
         payload = b"Subject: hello\r\n\r\nbody"
         encoded = base64.urlsafe_b64encode(payload)

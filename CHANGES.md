@@ -1,5 +1,69 @@
 # Changes
 
+## 2026-06-26 07:25 PDT - P1 - Isolate malformed Gmail get responses
+
+### Summary
+
+Prevented malformed Gmail per-message get responses from raising before raw MIME
+validation and aborting the remaining mailbox scan.
+
+### Work completed
+
+- Added a dependency-free helper that exposes `raw` only from mapping responses.
+- Routed `GetMimeMessage` through the helper and the existing strict base64url
+  decoder, preserving per-message `ValueError` rejection.
+- Added pure Python 2/3 response-shape tests and an integration source contract.
+- Added plan, source, test, and guidance preservation contracts.
+
+### Threads
+
+- Started: Gmail get response boundary — malformed per-message isolation.
+- Continued: existing strict raw MIME and mailbox fail-closed boundaries.
+- Stopped: none.
+
+### Files changed
+
+- `mail/raw_message.py` — validates get response container shape.
+- `mail/list.py` — removes the direct unvalidated `message.get('raw')` access.
+- `tests/test_raw_message.py` and `tests/test_integration_contracts.py` — cover
+  helper behavior and handler integration.
+- Repository guidance, plans, and baseline contracts — preserve the boundary.
+
+### Validation
+
+- Red phase: focused tests failed on the missing helper and direct response
+  dereference.
+- Green phase: 13 focused raw-message and integration tests passed.
+- Local and external-directory `make check` passed with 97 tests and all 77
+  authoritative Python files verified.
+- The pinned Python 2.7.18 container passed 97 tests with one expected skip and
+  verified all 77 authoritative Python files.
+- Two isolated hostile mutations removing the mapping guard or restoring the
+  direct response dereference were rejected.
+- Push and pull-request Check runs `28244650357` and `28244652748` passed
+  Python 3.10/3.12/3.14, the pinned Python 2.7.18 suite, and dependency audit on
+  `e8334ecb5f3623becdd1a50e39c20a25a6a6d232`.
+- CodeQL Actions and Python analysis passed in run `28244650912` on the same
+  implementation head.
+- `codex review --base origin/master` was attempted and skipped after the Codex
+  API returned HTTP 401 for both WebSocket and HTTPS transports.
+
+### Bugs / findings
+
+- P1: a non-mapping Gmail `messages.get` result raised `AttributeError` before
+  existing raw MIME guards and stopped processing later mailbox messages.
+
+### Blockers
+
+- Live App Engine, OAuth, Gmail, and mailbox behavior remains outside the
+  credential-free offline suite. Codex review authentication is unavailable;
+  local, mutation, and hosted checks provide closeout evidence.
+
+### Next action
+
+- Push this evidence-only closeout and merge PR #24 only after its exact final
+  head passes hosted checks.
+
 ## 2026-06-25 21:45 PDT - P1 - Bound Gmail list response shapes
 
 ### Summary

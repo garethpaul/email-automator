@@ -8,9 +8,9 @@ try:
 except (ImportError, ValueError):
     from body_parts import select_inline_body_parts
 try:
-    from .raw_message import decode_raw_message
+    from .raw_message import decode_raw_message, gmail_raw_value
 except (ImportError, ValueError):
-    from raw_message import decode_raw_message
+    from raw_message import decode_raw_message, gmail_raw_value
 try:
     from .mime_parser import parse_raw_mime
 except (ImportError, ValueError):
@@ -211,7 +211,7 @@ def GetMimeMessage(service, user_id, msg_id):
                                              format='raw').execute(http=auth.getAuth(user_id))
 
     try:
-        msg_str = decode_raw_message(message.get('raw'))
+        msg_str = decode_raw_message(gmail_raw_value(message))
     except ValueError:
         return None
     msg = parse_raw_mime(msg_str)
