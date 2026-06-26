@@ -84,6 +84,12 @@ Mail routes select the stored Gmail credential key only from the deployment's
 `AUTOMATION_USER_ID`; logged-in request input cannot override mailbox identity.
 Whitespace-only AUTOMATION_USER_ID values are rejected as missing configuration.
 
+Tracked `app.yaml` must retain empty credential placeholders. Authorized legacy
+runtime experiments use ignored `app.local.yaml`, verify that ignore rule before
+adding values, and follow `CREDENTIAL_SETUP.md`. OAuth client values, platform
+credentials, datastore tokens, mailbox identifiers, and live message evidence
+must remain outside git.
+
 Inbound malformed sender metadata should fail closed before duplicate-message
 reservation or outbound delivery.
 Inbound malformed recipient metadata is ignored or rejected before

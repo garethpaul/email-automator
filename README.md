@@ -51,6 +51,10 @@ Live Gmail/App Engine paths require local OAuth client configuration and App
 Engine credentials that must not be committed. The default local test path below
 does not access Gmail, OAuth, App Engine, or real mailbox data.
 
+See [`CREDENTIAL_SETUP.md`](CREDENTIAL_SETUP.md) for the exact Gmail scopes,
+configuration ownership, ignored local-manifest preflight, and explicit
+authorization-before-cron sequence. Do not put secrets in tracked `app.yaml`.
+
 `requirements.txt` belongs only to the legacy Python 2/App Engine runtime. Do
 not install it into the modern offline-test environment. It pins patched WebOb
 1.8.10 and excludes virtualenv because environment creation is tooling, not an
@@ -178,6 +182,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Maintenance Notes
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
+- See `CREDENTIAL_SETUP.md` before any authorized live-runtime experiment.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-08-email-rule-baseline.md` for the current offline
   reply-rule baseline.

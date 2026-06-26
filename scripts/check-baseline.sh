@@ -20,6 +20,7 @@ SENDER_CARDINALITY_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-sender-cardinalit
 MIME_CHARSET_PLAN="$ROOT_DIR/docs/plans/2026-06-13-email-mime-charset-fallback.md"
 LOCATION_INDEPENDENT_MAKE_PLAN="$ROOT_DIR/docs/plans/2026-06-13-location-independent-make.md"
 RECIPIENT_METADATA_PLAN="$ROOT_DIR/docs/plans/2026-06-14-email-recipient-metadata-boundary.md"
+CREDENTIAL_SETUP_PLAN="$ROOT_DIR/docs/plans/2026-06-25-credential-opt-in-setup.md"
 CONFIGURED_USER_ID_PLAN="$ROOT_DIR/docs/plans/2026-06-14-configured-user-id-authority.md"
 CONFIGURED_USER_ID_WHITESPACE_PLAN="$ROOT_DIR/docs/plans/2026-06-14-configured-user-id-whitespace.md"
 RUNTIME_VERIFICATION="$ROOT_DIR/RUNTIME_VERIFICATION.md"
@@ -57,11 +58,14 @@ require_file() {
 
 for path in \
   "README.md" \
+  "CREDENTIAL_SETUP.md" \
   "RUNTIME_VERIFICATION.md" \
   "SECURITY.md" \
   "requirements.txt" \
   "Makefile" \
   "VISION.md" \
+  "docs/plans/2026-06-25-credential-opt-in-setup-design.md" \
+  "docs/plans/2026-06-25-credential-opt-in-setup.md" \
   "CHANGES.md" \
   "app.yaml" \
   "cron.yaml" \
@@ -125,6 +129,41 @@ for path in \
   "docs/plans/2026-06-08-email-rule-baseline.md" \
   "docs/plans/2026-06-08-app-engine-safety-baseline.md"; do
   require_file "$path"
+done
+
+for credential_setup_contract in \
+  'app.local.yaml' \
+  'git check-ignore app.local.yaml' \
+  'https://www.googleapis.com/auth/gmail.modify' \
+  'https://www.googleapis.com/auth/gmail.send' \
+  'GOOGLE_CLIENT_ID' \
+  'GOOGLE_CLIENT_SECRET' \
+  'AUTOMATION_USER_ID' \
+  'AUTOMATION_TO_EMAIL' \
+  'AUTOMATION_FROM_EMAIL' \
+  'AUTOMATION_APPROVED_SENDERS' \
+  'Do not enable the cron schedule before authorization' \
+  'No OAuth, Gmail, App Engine, memcache, cron, or delivery flow was executed'; do
+  if ! grep -Fq "$credential_setup_contract" "$ROOT_DIR/CREDENTIAL_SETUP.md"; then
+    printf '%s\n' "Credential setup guide must keep contract: $credential_setup_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fxq 'app.local.yaml' "$ROOT_DIR/.gitignore"; then
+  printf '%s\n' 'Local App Engine manifest must remain ignored.' >&2
+  exit 1
+fi
+
+for credential_plan_contract in \
+  '# Credential And Opt-In Setup Implementation Plan' \
+  'Status: Completed' \
+  'Thirteen isolated hostile mutations were rejected' \
+  'Repository and external-directory `make check` passed'; do
+  if ! grep -Fq "$credential_plan_contract" "$CREDENTIAL_SETUP_PLAN"; then
+    printf '%s\n' "Credential setup plan must keep completion evidence: $credential_plan_contract" >&2
+    exit 1
+  fi
 done
 
 for python2_test_contract in \

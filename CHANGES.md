@@ -2,6 +2,16 @@
 
 ## 2026-06-25
 
+- Added a canonical credential and opt-in guide covering platform credentials,
+  OAuth client values, datastore-owned tokens, all automation settings, and the
+  exact Gmail modify/send scopes requested by the application.
+- Added an ignored `app.local.yaml` convention with a required
+  `git check-ignore` preflight so tracked `app.yaml` retains empty placeholders.
+- Documented explicit authorization and synthetic-mailbox checks that must pass
+  before cron is enabled, without claiming any live legacy runtime execution.
+
+## 2026-06-25
+
 - Fixed the tracked cache helper's Python 2/3 syntax and duration forwarding.
 - Added authoritative tracked/deployed Python surface verification across the
   required Python 2 and Python 3 runtime families.
