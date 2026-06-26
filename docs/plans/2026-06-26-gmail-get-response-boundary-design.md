@@ -54,3 +54,8 @@ convert `ValueError` into per-message rejection.
   expected skip and verified all 77 files.
 - Removing the mapping guard and restoring the direct response dereference were
   both rejected by focused hostile mutations.
+- Push and pull-request Check runs `28244650357` and `28244652748` passed all
+  Python and dependency jobs on implementation head
+  `e8334ecb5f3623becdd1a50e39c20a25a6a6d232`; CodeQL run `28244650912` passed.
+- `codex review --base origin/master` was attempted and skipped after HTTP 401
+  responses from both Codex API transports.

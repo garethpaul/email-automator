@@ -40,7 +40,13 @@ validation and aborting the remaining mailbox scan.
   verified all 77 authoritative Python files.
 - Two isolated hostile mutations removing the mapping guard or restoring the
   direct response dereference were rejected.
-- Hosted and review evidence pending.
+- Push and pull-request Check runs `28244650357` and `28244652748` passed
+  Python 3.10/3.12/3.14, the pinned Python 2.7.18 suite, and dependency audit on
+  `e8334ecb5f3623becdd1a50e39c20a25a6a6d232`.
+- CodeQL Actions and Python analysis passed in run `28244650912` on the same
+  implementation head.
+- `codex review --base origin/master` was attempted and skipped after the Codex
+  API returned HTTP 401 for both WebSocket and HTTPS transports.
 
 ### Bugs / findings
 
@@ -50,12 +56,13 @@ validation and aborting the remaining mailbox scan.
 ### Blockers
 
 - Live App Engine, OAuth, Gmail, and mailbox behavior remains outside the
-  credential-free offline suite.
+  credential-free offline suite. Codex review authentication is unavailable;
+  local, mutation, and hosted checks provide closeout evidence.
 
 ### Next action
 
-- Open the focused PR, attempt Codex review, and merge only after exact-head
-  hosted checks pass.
+- Push this evidence-only closeout and merge PR #24 only after its exact final
+  head passes hosted checks.
 
 ## 2026-06-25 21:45 PDT - P1 - Bound Gmail list response shapes
 

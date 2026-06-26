@@ -68,4 +68,10 @@ status: completed
   verified all 77 files.
 - Two isolated hostile mutations were rejected: helper mapping-guard removal
   and restoration of the direct `message.get('raw')` dereference.
-- Hosted checks and exact-head review remain the final closeout work.
+- Push and pull-request Check runs `28244650357` and `28244652748` passed
+  Python 2.7.18, Python 3.10/3.12/3.14, and dependency audit on implementation
+  head `e8334ecb5f3623becdd1a50e39c20a25a6a6d232`.
+- CodeQL run `28244650912` passed Actions and Python analysis.
+- `codex review --base origin/master` was attempted and skipped after HTTP 401
+  responses from both Codex API transports.
+- Exact final-head hosted validation remains the closeout gate.
