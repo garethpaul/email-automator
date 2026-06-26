@@ -17,6 +17,12 @@ except NameError:
     INTEGER_TYPES = (int,)
 
 
+def gmail_raw_value(response):
+    if not isinstance(response, dict):
+        return None
+    return response.get("raw")
+
+
 def decode_raw_message(raw_value, max_bytes=MAX_RAW_MESSAGE_BYTES):
     if isinstance(max_bytes, bool) or not isinstance(max_bytes, INTEGER_TYPES) or max_bytes <= 0:
         raise ValueError("Raw message limit must be a positive integer.")

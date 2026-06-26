@@ -10,6 +10,9 @@ for contract in (
     "MAX_RAW_MESSAGE_BYTES = 25 * 1024 * 1024",
     'BASE64URL_ALPHABET = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"',
     'BASE64URL_RE = re.compile(b"^[A-Za-z0-9_-]*={0,2}$")',
+    "def gmail_raw_value(response):",
+    "if not isinstance(response, dict):",
+    'return response.get("raw")',
     "def decode_raw_message(raw_value, max_bytes=MAX_RAW_MESSAGE_BYTES):",
     "if not isinstance(raw_value, (TEXT_TYPE, BYTE_TYPE)) or not raw_value:",
     "if not BASE64URL_RE.match(encoded):",
@@ -49,7 +52,7 @@ if not helper.index("pad_bit_mask =") < helper.index("base64.urlsafe_b64decode(p
 handler = integration.split("def GetMimeMessage", 1)[1].split("class Single", 1)[0]
 contracts = (
     "message = service.users().messages().get",
-    "msg_str = decode_raw_message(message.get('raw'))",
+    "msg_str = decode_raw_message(gmail_raw_value(message))",
     "except ValueError:",
     "msg = parse_raw_mime(msg_str)",
     "if msg is None:",

@@ -28,6 +28,8 @@ RUNTIME_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-email-automator-runti
 CONFIGURED_USER_ID_CHECK="$ROOT_DIR/scripts/check-configured-user-id.py"
 RAW_MESSAGE_CHECK="$ROOT_DIR/scripts/check-raw-message-boundary.py"
 RAW_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-15-raw-gmail-mime-boundary.md"
+GMAIL_GET_RESPONSE_DESIGN="$ROOT_DIR/docs/plans/2026-06-26-gmail-get-response-boundary-design.md"
+GMAIL_GET_RESPONSE_PLAN="$ROOT_DIR/docs/plans/2026-06-26-gmail-get-response-boundary.md"
 CANONICAL_BASE64URL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-canonical-gmail-base64url.md"
 INLINE_BODY_PARTS_PLAN="$ROOT_DIR/docs/plans/2026-06-15-inline-mime-body-parts.md"
 ENCAPSULATED_MESSAGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-encapsulated-message-body-boundary.md"
@@ -96,6 +98,8 @@ for path in \
   "tests/test_text_payload.py" \
   "docs/plans/2026-06-25-gmail-list-response-boundary-design.md" \
   "docs/plans/2026-06-25-gmail-list-response-boundary.md" \
+  "docs/plans/2026-06-26-gmail-get-response-boundary-design.md" \
+  "docs/plans/2026-06-26-gmail-get-response-boundary.md" \
   "docs/plans/2026-06-09-email-recipient-address-guard.md" \
   "docs/plans/2026-06-09-email-config-address-validation.md" \
   "docs/plans/2026-06-09-email-outbound-from-address-validation.md" \
@@ -710,6 +714,50 @@ for gmail_list_plan in \
   if ! grep -Fqi "status: completed" "$gmail_list_plan" ||
     ! grep -Fq "make check" "$gmail_list_plan"; then
     printf '%s\n' "$gmail_list_plan must record completed make check verification." >&2
+    exit 1
+  fi
+done
+
+for gmail_get_response_contract in \
+  "def gmail_raw_value(response):" \
+  'if not isinstance(response, dict):' \
+  'return response.get("raw")' \
+  "from .raw_message import decode_raw_message, gmail_raw_value" \
+  "decode_raw_message(gmail_raw_value(message))" \
+  "test_gmail_raw_value_rejects_malformed_response_shapes" \
+  "test_gmail_raw_value_returns_mapping_raw_field_unchanged" \
+  "test_gmail_get_response_is_validated_before_raw_message_decoding"; do
+  if ! grep -Fq "$gmail_get_response_contract" \
+    "$ROOT_DIR/mail/raw_message.py" \
+    "$ROOT_DIR/mail/list.py" \
+    "$ROOT_DIR/tests/test_raw_message.py" \
+    "$ROOT_DIR/tests/test_integration_contracts.py"; then
+    printf '%s\n' "Gmail get response boundary is missing: $gmail_get_response_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq "decode_raw_message(message.get('raw'))" "$ROOT_DIR/mail/list.py"; then
+  printf '%s\n' "Gmail MIME retrieval must not dereference an unvalidated get response." >&2
+  exit 1
+fi
+
+for gmail_get_document in \
+  "$ROOT_DIR/README.md" \
+  "$ROOT_DIR/SECURITY.md" \
+  "$ROOT_DIR/VISION.md" \
+  "$ROOT_DIR/CHANGES.md" \
+  "$ROOT_DIR/AGENTS.md"; do
+  if ! grep -Fq "Gmail get responses" "$gmail_get_document"; then
+    printf '%s\n' "$gmail_get_document must document the Gmail get response boundary." >&2
+    exit 1
+  fi
+done
+
+for gmail_get_plan in "$GMAIL_GET_RESPONSE_DESIGN" "$GMAIL_GET_RESPONSE_PLAN"; do
+  if ! grep -Fqi "status: completed" "$gmail_get_plan" ||
+    ! grep -Fq "make check" "$gmail_get_plan"; then
+    printf '%s\n' "$gmail_get_plan must record completed make check verification." >&2
     exit 1
   fi
 done

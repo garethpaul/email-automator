@@ -2,6 +2,8 @@
 
 Raw Gmail MIME values are strictly base64url-validated and capped at 25 MiB before MIME parsing.
 Raw Gmail MIME values reject noncanonical pad bits before MIME parsing.
+Gmail get responses are shape-checked before raw MIME decoding, so malformed
+per-message responses are dropped without aborting the mailbox scan.
 MIME traversal is depth- and part-count-bounded, rejects ambiguous related
 roots and encapsulated `message/*` descendants, and drops parser recursion
 failures instead of aborting the mailbox scan. Decoded text parts are capped
@@ -170,6 +172,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Gmail list responses accept only a mapping with a list or tuple of message
   summaries, preserve the 30-message scan bound, and return an empty iterable
   for malformed response shapes or handled Gmail HTTP failures.
+- Gmail get responses accept only a mapping before raw MIME decoding; malformed
+  response containers follow the existing per-message rejection path.
 - `APP_DEBUG` defaults off; set `APP_DEBUG=1` only for local debugging.
 
 ## Security and Privacy Notes
@@ -223,6 +227,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   inbound sender authorization.
 - See `docs/plans/2026-06-14-email-recipient-metadata-boundary.md` for fail-closed
   inbound recipient metadata handling.
+- See `docs/plans/2026-06-26-gmail-get-response-boundary-design.md` and
+  `docs/plans/2026-06-26-gmail-get-response-boundary.md` for malformed
+  per-message Gmail response isolation.
 - Use [`RUNTIME_VERIFICATION.md`](RUNTIME_VERIFICATION.md) for exact-head App
   Engine, OAuth, Gmail, memcache, cron, inbound-handler, and outbound-delivery
   evidence. It requires synthetic mailboxes and messages plus sanitized results.
