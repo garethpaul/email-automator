@@ -26,6 +26,8 @@ Priority:
 - Preserve cron/task-queue intent for retrieval and processing
 - Keep App Engine setup requirements visible
 - Keep GitHub Actions aligned with the local `make check` baseline
+- Keep credential categories, exact Gmail scopes, ignored local configuration,
+  and authorization-before-cron opt-in documented
 
 Current baseline:
 
@@ -96,7 +98,8 @@ Current baseline:
 
 Next priorities:
 
-- Document credential files, scopes, and safe local setup
+- Keep credential files, scopes, and safe local opt-in setup aligned with the
+  checked-in auth and deployment configuration
 - Migrate App Engine, Python 2, webapp2, OAuth, and Google API dependencies in
   one dedicated compatibility pass
 - Add tests around email stripping, rule matching, and reply generation
