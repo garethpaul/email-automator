@@ -15,6 +15,10 @@ try:
     from .mime_parser import parse_raw_mime
 except (ImportError, ValueError):
     from mime_parser import parse_raw_mime
+try:
+    from .list_response import bounded_message_summaries
+except (ImportError, ValueError):
+    from list_response import bounded_message_summaries
 from database import default
 
 # Get Libs from Sys
@@ -77,24 +81,23 @@ def ListMessagesWithLabels(service, user_id, label_ids=[]):
     response = service.users().messages().list(userId='me',
                                                labelIds=label_ids).execute(http=auth.getAuth(user_id))
     messages = []
-    if 'messages' in response:
-        msgs = response['messages']
-        for msg in msgs[:30]:
-            message_id = rules.gmail_message_id(msg)
-            if not message_id:
-                continue
-            cache_key = "messageId_" + message_id
-            _cache = memcache.get(cache_key)
-            if _cache is not None:
-                messages.append(_cache)
-            else:
-                mail_msg = GetMimeMessage(service, user_id, message_id)
-                if mail_msg is not None:
-                    memcache.add(cache_key, mail_msg)
-                    messages.append(mail_msg)
+    for msg in bounded_message_summaries(response):
+        message_id = rules.gmail_message_id(msg)
+        if not message_id:
+            continue
+        cache_key = "messageId_" + message_id
+        _cache = memcache.get(cache_key)
+        if _cache is not None:
+            messages.append(_cache)
+        else:
+            mail_msg = GetMimeMessage(service, user_id, message_id)
+            if mail_msg is not None:
+                memcache.add(cache_key, mail_msg)
+                messages.append(mail_msg)
     return messages
   except errors.HttpError, error:
     print 'An error occurred: %s' % error
+    return []
 
 def GetThread(user_id, thread_id):
   """Get a Thread.

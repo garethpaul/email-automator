@@ -87,6 +87,8 @@ Current baseline:
   release their reservation for retry.
 - Gmail message IDs identify MIME fetches and cache entries; thread IDs are not
   reused as message identity, and malformed summaries are skipped.
+- Gmail list responses remain bounded and shape-validated so upstream response
+  drift or handled HTTP failures cannot make mailbox handlers iterate `None`.
 - GitHub Actions runs the offline `make check` baseline on Python 3.10, 3.12,
   and 3.14 for pushes, pull requests, and manual dispatches.
 - Makefile verification resolves repository paths independently of the caller's

@@ -115,6 +115,10 @@ Gmail message IDs, not thread IDs, identify MIME fetches and parsed-message
 cache entries. Missing or malformed summary IDs are skipped before cache or API
 access so stale thread content cannot replace a later message.
 
+Gmail list responses are shape-checked before iteration. Malformed response or
+`messages` containers and handled Gmail HTTP failures return an empty iterable
+instead of aborting the mail handler.
+
 ## Dependency and Supply Chain Security
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
